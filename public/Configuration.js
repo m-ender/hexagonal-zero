@@ -5,3 +5,4 @@
 var renderScale = 0.1;
 var maxCoord = 1/renderScale;
 
+var nColors = 6;

@@ -64,7 +64,7 @@ function init()
     if (!debug)
         renderMenu();
 
-    colorGenerator = new ColorGenerator();
+    colorGenerator = new ColorGenerator(nColors);
 
     gl.clearColor(1, 1, 1, 1);
 

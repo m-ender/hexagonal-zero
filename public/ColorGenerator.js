@@ -1,9 +1,8 @@
-function ColorGenerator(baseColor) {
+// n is the number of distinct colors to be generated.
+function ColorGenerator(n, baseColor) {
     this.baseColor = jQuery.Color(baseColor || '#74DDF2');
+    this.n = n;
     this.i = 0;
-
-    // The Golden Ratio in degrees
-    this.phi = 0.61803398874989484820 * 360;
 
     // For this.correctHue()
     this.hueCorrection = [
@@ -20,16 +19,29 @@ function ColorGenerator(baseColor) {
         [225,210],
         [255,250]
     ];
+
+    this.colors = [];
+    for (var i = 0; i < n; ++i)
+    {
+        this.colors.push(
+            this.baseColor.hue(this.correctHue(this.baseColor.hue() + i/n * 360))
+        );
+    }
 }
 
-ColorGenerator.prototype.nextColor = function(correctHue) {
-    if (correctHue === undefined)
-        correctHue = true;
+ColorGenerator.prototype.nextColor = function() {
+    var color = this.colors[this.i];
 
-    if (correctHue)
-        return this.baseColor.hue(this.correctHue(this.baseColor.hue() + this.phi * this.i++));
-    else
-        return this.baseColor.hue(this.baseColor.hue() + this.phi * this.i++);
+    this.i = (this.i+1) % this.n;
+    return color;
+};
+
+ColorGenerator.prototype.getColor = function(i) {
+    return this.colors[i];
+};
+
+ColorGenerator.prototype.getRandomColor = function() {
+    return this.colors[floor(Math.random()*this.n)];
 };
 
 // Hue correction code from http://vis4.net/labs/colorscales/
