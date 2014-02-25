@@ -1,4 +1,7 @@
-var renderScale = 0.9; // means that the coordinate range [-1, 1] will fill 90% of the viewport
-                       // the scaling is done in the shaders, but is has to be respected in obtaining coordinates from the mouse position
+// Render scale is the percentage of the viewport that will be filled by
+// the coordinate range [-1, 1].
+// The scaling is done in the shaders, but is has to be respected in
+// obtaining coordinates from the mouse position.
+var renderScale = 0.1;
 var maxCoord = 1/renderScale;
 

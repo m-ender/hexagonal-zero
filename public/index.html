@@ -12,8 +12,9 @@
     <script type="text/javascript" src="webgl-utils.js"></script>
     <script type="text/javascript" src="math.js"></script>
     <script type="text/javascript" src="ColorGenerator.js"></script>
-    <!--<script type="text/javascript" src="Hexagon.js"></script>
-    --><script type="text/javascript" src="Configuration.js"></script>
+    <script type="text/javascript" src="Hexagon.js"></script>
+    <script type="text/javascript" src="Grid.js"></script>
+    <script type="text/javascript" src="Configuration.js"></script>
     <script type="text/javascript" src="hexagonal-zero.js"></script>
 
     <!--[if IE]>
@@ -40,8 +41,8 @@
 
             // The render scale shrinks or grows the viewport and refers to which percentage
             // of the screen will be filled by the [-1, 1] coordinate range.
-            gl_Position = vec4(aPos.x,
-                               aPos.y,
+            gl_Position = vec4(uRenderScale * (uCenter.x + aPos.x),
+                               uRenderScale * (uCenter.y + aPos.y),
                                0,
                                aPos.w);
         }

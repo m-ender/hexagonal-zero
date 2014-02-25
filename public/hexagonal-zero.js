@@ -12,6 +12,8 @@ var colorGenerator;
 // Objects holding data for individual shader programs
 var hexagonProgram = {};
 
+var grid;
+
 var resolution = 512; // We're assuming a square aspect ratio
 var viewPort = {};
 
@@ -62,6 +64,8 @@ function init()
     if (!debug)
         renderMenu();
 
+    colorGenerator = new ColorGenerator();
+
     gl.clearColor(1, 1, 1, 1);
 
     // Load shaders and get uniform locations
@@ -80,7 +84,9 @@ function init()
 
     gl.useProgram(null);
 
-    colorGenerator = new ColorGenerator();
+    prepareHexagons();
+
+    grid = new Grid(6, colorGenerator);
 
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
@@ -189,7 +195,7 @@ function drawScreen()
     gl.viewport(0, 0, viewPort.width, viewPort.height);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // TODO: Render them hexagons
+    grid.render();
 
     gl.disable(gl.BLEND);
 }
