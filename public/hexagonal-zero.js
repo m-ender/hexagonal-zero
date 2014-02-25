@@ -187,7 +187,6 @@ function update()
         var steps = floor(dTime / interval);
 
         // Do something with dT = steps * interval
-        angle += (steps * interval / 1000) * 60 / 180 * pi;
 
         drawScreen();
     }

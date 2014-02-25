@@ -7,6 +7,8 @@ var ir = { x: 0,
 
 // Size is the number of hexagonal rings in the grid (including the center)
 function Grid(size, colorGenerator) {
+    this.size = size;
+
     this.grid = [];
 
     for (var q = -size + 1; q <= size - 1; ++q)
@@ -15,8 +17,8 @@ function Grid(size, colorGenerator) {
 
         for (var r = -size + 1; r <= size - 1; ++r)
         {
-            var y = - q - r;
-            if (abs(y) >= size)
+            var s = - q - r;
+            if (abs(s) >= size)
                 continue;
 
             var center = this.axialToPixel(q,r);
@@ -32,6 +34,19 @@ Grid.prototype.axialToPixel = function(q, r) {
         x: q * iq.x + r * ir.x,
         y: q * iq.y + r * ir.y,
     };
+};
+
+Grid.prototype.get = function(q, r) {
+    var s = - q - r;
+    if (abs(q) >= this.size ||
+        abs(r) >= this.size ||
+        abs(s) >= this.size)
+        return null;
+
+    var i = q + (this.size - 1);
+    var j = r + min(i, this.size - 1);
+
+    return this.grid[i][j];
 };
 
 Grid.prototype.render = function() {

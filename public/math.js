@@ -12,8 +12,8 @@ var cos = Math.cos;
 
 var floor = Math.floor;
 
-var max = Math.max();
-var min = Math.min();
+var max = Math.max;
+var min = Math.min;
 
 function sign(x) {
     return x ? (x < 0 ? -1 : 1) : 0;
