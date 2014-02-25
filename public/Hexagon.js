@@ -39,23 +39,39 @@ function Hexagon(x, y, color)
 Hexagon.prototype.hide = function() { this.hidden = true; };
 Hexagon.prototype.show = function() { this.hidden = false; };
 
-Hexagon.prototype.render = function() {
+// Outline can optionally be set to true to render ... well ...
+// only an outline.
+Hexagon.prototype.render = function(outline) {
     if (this.hidden) return;
 
     gl.useProgram(hexagonProgram.program);
 
     gl.uniform2f(hexagonProgram.uCenter, this.x, this.y);
-    gl.uniform4f(hexagonProgram.uColor,
-                 this.color.red()/255,
-                 this.color.green()/255,
-                 this.color.blue()/255,
-                 1);
 
     gl.enableVertexAttribArray(hexagonProgram.aPos);
     gl.bindBuffer(gl.ARRAY_BUFFER, hexagonVertices.bufferId);
     gl.vertexAttribPointer(hexagonProgram.aPos, 2, gl.FLOAT, false, 0, 0);
 
-    gl.drawArrays(gl.TRIANGLE_FAN, 0, 6);
+    if (outline)
+    {
+        gl.uniform4f(hexagonProgram.uColor,
+                     0,
+                     0,
+                     0,
+                     1);
+
+        gl.drawArrays(gl.LINE_LOOP, 0, 6);
+    }
+    else
+    {
+        gl.uniform4f(hexagonProgram.uColor,
+                     this.color.red()/255,
+                     this.color.green()/255,
+                     this.color.blue()/255,
+                     1);
+
+        gl.drawArrays(gl.TRIANGLE_FAN, 0, 6);
+    }
 
     gl.disableVertexAttribArray(hexagonProgram.aPos);
 };
