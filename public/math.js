@@ -11,6 +11,8 @@ var sin = Math.sin;
 var cos = Math.cos;
 
 var floor = Math.floor;
+var ceil = Math.ceil;
+var round = Math.round;
 
 var max = Math.max;
 var min = Math.min;

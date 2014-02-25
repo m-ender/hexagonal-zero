@@ -6,8 +6,9 @@ var ir = { x: 0,
            y: -sqrt(3) };
 
 // Size is the number of hexagonal rings in the grid (including the center)
-function Grid(size, colorGenerator) {
+function Grid(size, nTypes, colorGenerator) {
     this.size = size;
+    this.nTypes = nTypes;
 
     this.grid = [];
 
@@ -22,7 +23,14 @@ function Grid(size, colorGenerator) {
                 continue;
 
             var center = this.axialToPixel(q,r);
-            column.push(new Hexagon(center.x, center.y, colorGenerator.nextColor()));
+            var type = floor(Math.random() * nTypes);
+            column.push({
+                q: q,
+                r: r,
+                s: s,
+                type: type,
+                geometry: new Hexagon(center.x, center.y, colorGenerator.getColor(type)),
+            });
         }
 
         this.grid.push(column);
@@ -31,8 +39,32 @@ function Grid(size, colorGenerator) {
 
 Grid.prototype.axialToPixel = function(q, r) {
     return {
-        x: q * iq.x + r * ir.x,
-        y: q * iq.y + r * ir.y,
+        x: 3/2 * q,
+        y: -sqrt(3) * (q/2 + r),
+    };
+};
+
+Grid.prototype.pixelToAxial = function(x, y) {
+    var q = 2/3 * x;
+    var r = (- sqrt(3)*y - x)/3;
+    var s = - q - r;
+
+    var rq = round(q);
+    var rr = round(r);
+    var rs = round(s);
+
+    var dq = abs(q - rq);
+    var dr = abs(r - rr);
+    var ds = abs(s - rs);
+
+    if (dq > dr && dq > ds)
+        rq = -rr-rs;
+    else if (dr > ds)
+        rr = -rq-rs;
+
+    return {
+        q: rq,
+        r: rr,
     };
 };
 
@@ -55,7 +87,7 @@ Grid.prototype.render = function() {
         var column = this.grid[i];
         for (var j = 0; j < column.length; ++j)
         {
-            column[j].render();
+            column[j].geometry.render();
         }
     }
 };

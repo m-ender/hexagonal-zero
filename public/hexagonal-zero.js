@@ -27,6 +27,7 @@ var lastTime;
 var angle = 0;
 
 var mouseDown = false;
+var highlightedHex = null;
 
 window.onload = init;
 
@@ -90,7 +91,7 @@ function init()
 
     prepareHexagons();
 
-    grid = new Grid(6, colorGenerator);
+    grid = new Grid(gridSize, nColors, colorGenerator);
 
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
@@ -187,6 +188,7 @@ function update()
         var steps = floor(dTime / interval);
 
         // Do something with dT = steps * interval
+        //angle += (steps*interval/1000)*pi/3;
 
         drawScreen();
     }
@@ -204,6 +206,9 @@ function drawScreen()
 
     grid.render();
 
+    if (highlightedHex)
+        highlightedHex.geometry.render(true);
+
     gl.useProgram(null);
 
     gl.disable(gl.BLEND);
@@ -217,6 +222,16 @@ function handleMouseMove(event) {
     {
         debugBox.find('#xcoord').html(coords.x);
         debugBox.find('#ycoord').html(coords.y);
+    }
+
+    var axial = grid.pixelToAxial(coords.x, coords.y);
+    highlightedHex = grid.get(axial.q, axial.r);
+
+    if (debug)
+    {
+        debugBox.find('#hexq').html(axial.q);
+        debugBox.find('#hexr').html(axial.r);
+        debugBox.find('#hexs').html(-axial.q-axial.r);
     }
 }
 
@@ -252,11 +267,14 @@ function handleMouseUp(event) {
 // Takes the mouse event and the rectangle to normalise for
 // Outputs object with x, y coordinates in [-maxCoord,maxCoord] with positive
 // y pointing upwards.
+// It also accounts for the rotation of the grid.
 function normaliseCursorCoordinates(event, rect)
 {
+    var x = (2*(event.clientX - rect.left) / resolution - 1) / renderScale;
+    var y = (1 - 2*(event.clientY - rect.top) / resolution) / renderScale; // invert, to make positive y point upwards
     return {
-        x: (2*(event.clientX - rect.left) / resolution - 1) / renderScale,
-        y: (1 - 2*(event.clientY - rect.top) / resolution) / renderScale, // invert, to make positive y point upwards
+        x: x*cos(angle) - y*sin(angle),
+        y: x*sin(angle) + y*cos(angle)
     };
 }
 
