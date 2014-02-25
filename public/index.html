@@ -10,12 +10,11 @@
     <script type="text/javascript" src="jquery.color-2.1.2.js"></script>
 
     <script type="text/javascript" src="webgl-utils.js"></script>
-    <!--<script type="text/javascript" src="math.js"></script>
+    <script type="text/javascript" src="math.js"></script>
     <script type="text/javascript" src="ColorGenerator.js"></script>
-    <script type="text/javascript" src="Hexagon.js"></script>
-    <script type="text/javascript" src="Line.js"></script>
-    <script type="text/javascript" src="Configuration.js"></script>
-    <script type="text/javascript" src="hexagonal-zero.js"></script>-->
+    <!--<script type="text/javascript" src="Hexagon.js"></script>
+    --><script type="text/javascript" src="Configuration.js"></script>
+    <script type="text/javascript" src="hexagonal-zero.js"></script>
 
     <!--[if IE]>
         <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -25,37 +24,25 @@
         #define PI 3.1415926535897932384626433832795
 
         uniform float uRenderScale;
+        // This is the angle by which the entire view port is rotated
+        uniform float uAngle;
 
         uniform vec2 uCenter;
-        uniform float uR;
-        uniform float uFromAngle;
-        uniform float uToAngle;
+        uniform vec4 uColor;
 
         attribute vec4 aPos;
-        attribute vec4 aColor;
 
         varying vec4 vColor;
 
         void main()
         {
-            vColor = aColor;
-            // Map the angle of the given vertex from (-pi,pi] to [uFromAngle,uToAngle)
-            // (-pi, pi] -> (-0.5, 0.5]
-            float t = atan(aPos.y, aPos.x) / (2.0*PI);
-            // map the (-0.5, 0.0) range to (0.5, 1)
-            t = mod(t, 1.0);
-            // map [0.0, 1.0) to [uFromAngle, uToAngle)
-            float mappedAngle = t * (uToAngle - uFromAngle) + uFromAngle;
-
-            // We also need the initial distance from the origin to account for origin-vertices
-            // and faraway vertices for circle insides and outsides
-            float r = aPos.x*aPos.x + aPos.y*aPos.y;
+            vColor = uColor;
 
             // The render scale shrinks or grows the viewport and refers to which percentage
             // of the screen will be filled by the [-1, 1] coordinate range.
-            gl_Position = vec4(uRenderScale * (uR * r * cos(mappedAngle) + uCenter.x),
-                               uRenderScale * (uR * r * sin(mappedAngle) + uCenter.y),
-                               uRenderScale * aPos.z,
+            gl_Position = vec4(aPos.x,
+                               aPos.y,
+                               0,
                                aPos.w);
         }
     </script>
