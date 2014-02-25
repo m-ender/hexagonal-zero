@@ -15,8 +15,8 @@ function Grid(size, colorGenerator) {
 
         for (var r = -size + 1; r <= size - 1; ++r)
         {
-            var s = - q - r;
-            if (abs(s) >= size)
+            var y = - q - r;
+            if (abs(y) >= size)
                 continue;
 
             var center = this.axialToPixel(q,r);

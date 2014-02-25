@@ -23,6 +23,9 @@ var fps = 60;
 var interval = 1000/fps;
 var lastTime;
 
+// Rotation angle of the entire grid
+var angle = 0;
+
 var mouseDown = false;
 
 window.onload = init;
@@ -81,6 +84,7 @@ function init()
     // fill uniforms that are already known
     gl.useProgram(hexagonProgram.program);
     gl.uniform1f(hexagonProgram.uRenderScale, renderScale);
+    gl.uniform1f(hexagonProgram.uAngle, angle);
 
     gl.useProgram(null);
 
@@ -183,6 +187,7 @@ function update()
         var steps = floor(dTime / interval);
 
         // Do something with dT = steps * interval
+        angle += (steps * interval / 1000) * 60 / 180 * pi;
 
         drawScreen();
     }
@@ -195,7 +200,12 @@ function drawScreen()
     gl.viewport(0, 0, viewPort.width, viewPort.height);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+    gl.useProgram(hexagonProgram.program);
+    gl.uniform1f(hexagonProgram.uAngle, angle);
+
     grid.render();
+
+    gl.useProgram(null);
 
     gl.disable(gl.BLEND);
 }
