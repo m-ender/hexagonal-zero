@@ -30,10 +30,14 @@ var targetAngle;
 var State = {
     Idle: "Idle",
     Rotating: "Rotating",
+    HexSelected: "HexSelected",
+    HexSwap: "HexSwap",
 };
 var currentState;
 
 var highlightedHex = null;
+var lockedHex = null;
+var swappedHex = null;
 
 window.onload = init;
 
@@ -227,6 +231,9 @@ function drawScreen()
     if (highlightedHex)
         highlightedHex.geometry.render(true);
 
+    if (lockedHex)
+        lockedHex.geometry.render(true);
+
     gl.useProgram(null);
 
     gl.disable(gl.BLEND);
@@ -243,13 +250,35 @@ function handleMouseMove(event) {
     }
 
     var axial = grid.pixelToAxial(coords.x, coords.y);
-    highlightedHex = grid.get(axial.q, axial.r);
-
-    if (debug)
+    var hex = grid.get(axial.q, axial.r);
+    switch(currentState)
     {
-        debugBox.find('#hexq').html(axial.q);
-        debugBox.find('#hexr').html(axial.r);
-        debugBox.find('#hexs').html(-axial.q-axial.r);
+    case State.Idle:
+        highlightedHex = hex;
+
+        if (debug)
+        {
+            debugBox.find('#hexq').html(axial.q);
+            debugBox.find('#hexr').html(axial.r);
+            debugBox.find('#hexs').html(-axial.q-axial.r);
+        }
+        break;
+    case State.HexSelected:
+        if (hex && grid.manhattanDistance(hex, lockedHex) === 1)
+        {
+            highlightedHex = hex;
+            if (debug)
+            {
+                debugBox.find('#hexq').html(axial.q);
+                debugBox.find('#hexr').html(axial.r);
+                debugBox.find('#hexs').html(-axial.q-axial.r);
+            }
+        }
+        else
+        {
+            highlightedHex = null;
+        }
+        break;
     }
 }
 
@@ -266,7 +295,15 @@ function handleMouseDown(event) {
         debugBox.find('#ydown').html(coords.y);
     }
 
-    mouseDown = true;
+    switch(currentState)
+    {
+    case State.Idle:
+        var axial = grid.pixelToAxial(coords.x, coords.y);
+        lockedHex = grid.get(axial.q, axial.r);
+
+        currentState = State.HexSelected;
+        break;
+    }
 }
 
 function handleMouseUp(event) {

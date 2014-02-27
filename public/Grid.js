@@ -104,6 +104,12 @@ Grid.prototype.get = function(q, r) {
     return this.grid[i][j];
 };
 
+Grid.prototype.manhattanDistance = function(hex1, hex2) {
+    return max(abs(hex1.a - hex2.a),
+               abs(hex1.b - hex2.b),
+               abs(hex1.c - hex2.c));
+};
+
 Grid.prototype.render = function() {
     for (var i = 0; i < this.grid.length; ++i)
     {
