@@ -87,12 +87,6 @@ Grid.prototype.swap = function(hex1, hex2) {
     var center1 = this.axialToPixel(hex1.a, hex1.b);
     var center2 = this.axialToPixel(hex2.a, hex2.b);
 
-    hex1.geometry.x = center1.x;
-    hex1.geometry.y = center1.y;
-
-    hex2.geometry.x = center2.x;
-    hex2.geometry.y = center2.y;
-
     this.grid[i1][j1] = hex2;
     this.grid[i2][j2] = hex1;
 };

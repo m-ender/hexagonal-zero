@@ -229,15 +229,17 @@ function update()
         case State.HexSwap:
             currentT += dTime * swapV;
 
+            if (currentT >= hexD)
+                currentT = hexD;
+
             lockedHex.geometry.x = lockedPos.x + swapDirection.x * currentT;
             lockedHex.geometry.y = lockedPos.y + swapDirection.y * currentT;
 
             swappedHex.geometry.x = swappedPos.x - swapDirection.x * currentT;
             swappedHex.geometry.y = swappedPos.y - swapDirection.y * currentT;
 
-            if (currentT >= targetT)
+            if (currentT === hexD)
             {
-                currentT = targetT;
                 grid.swap(lockedHex, swappedHex);
                 if (grid.hasMatches())
                 {
@@ -248,7 +250,6 @@ function update()
                 else
                 {
                     grid.swap(lockedHex, swappedHex);
-                    targetT = 0;
                     currentState = State.HexUnswap;
                 }
             }
@@ -256,11 +257,8 @@ function update()
         case State.HexUnswap:
             currentT -= dTime * swapV;
 
-            if (currentT <= targetT)
-            {
-                currentT = targetT;
-                currentState = State.Idle;
-            }
+            if (currentT <= 0)
+                currentT = 0;
 
             lockedHex.geometry.x = lockedPos.x + swapDirection.x * currentT;
             lockedHex.geometry.y = lockedPos.y + swapDirection.y * currentT;
@@ -268,10 +266,11 @@ function update()
             swappedHex.geometry.x = swappedPos.x - swapDirection.x * currentT;
             swappedHex.geometry.y = swappedPos.y - swapDirection.y * currentT;
 
-            if (currentState === State.Idle)
+            if (currentT === 0)
             {
                 lockedHex = null;
                 swappedHex = null;
+                currentState = State.Idle;
             }
             break;
         }
@@ -385,6 +384,7 @@ function handleMouseDown(event) {
     case State.HexSelected:
         if (grid.manhattanDistance(hex, lockedHex) === 1)
         {
+            highlightedHex = null;
             swappedHex = hex;
 
             lockedPos = {
@@ -405,7 +405,6 @@ function handleMouseDown(event) {
                 y: dy / norm,
             };
             currentT = 0;
-            targetT = hexD;
 
             currentState = State.HexSwap;
         }
