@@ -92,6 +92,87 @@ Grid.prototype.swap = function(hex1, hex2) {
 };
 
 Grid.prototype.hasMatches = function() {
+    var x, y, z, q, r;
+    var lastType, matchLength;
+    var hex;
+
+    // TODO: Avoid traversing "empty corners" of rhombi.
+
+    // Search rows of constant x (vertical columns)
+    for (x = -this.size+1; x <= this.size-1; ++x)
+    {
+        matchLength = 1;
+        lastType = null;
+        for (z = -this.size+1; z <= this.size-1; ++z)
+        {
+            q = x;
+            r = z;
+            hex = this.get(q,r);
+
+            if (!hex) continue;
+
+            if (hex.type === lastType)
+            {
+                if (++matchLength >= 3) return true;
+            }
+            else
+            {
+                matchLength = 1;
+                lastType = hex.type;
+            }
+        }
+    }
+
+    // Search rows of constant y (bottom left to top right)
+    for (y= -this.size+1; y <= this.size-1; ++y)
+    {
+        matchLength = 1;
+        lastType = null;
+        for (x = -this.size+1; x <= this.size-1; ++x)
+        {
+            q = x;
+            r = -x-y;
+            hex = this.get(q,r);
+
+            if (!hex) continue;
+
+            if (hex.type === lastType)
+            {
+                if (++matchLength >= 3) return true;
+            }
+            else
+            {
+                matchLength = 1;
+                lastType = hex.type;
+            }
+        }
+    }
+
+    // Search rows of constant z (bottom right to top left)
+    for (z= -this.size+1; z <= this.size-1; ++z)
+    {
+        matchLength = 1;
+        lastType = null;
+        for (y = -this.size+1; y <= this.size-1; ++y)
+        {
+            q = -y-z;
+            r = z;
+            hex = this.get(q,r);
+
+            if (!hex) continue;
+
+            if (hex.type === lastType)
+            {
+                if (++matchLength >= 3) return true;
+            }
+            else
+            {
+                matchLength = 1;
+                lastType = hex.type;
+            }
+        }
+    }
+
     return false;
 };
 
