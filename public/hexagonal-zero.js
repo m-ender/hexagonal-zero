@@ -39,6 +39,17 @@ var highlightedHex = null;
 var lockedHex = null;
 var swappedHex = null;
 
+// For swapping tiles. T is an interpolation parameter
+// between the initial positions (0) and the final positions
+// (hexD).
+var currentT;
+var targetT;
+// For precomputing a normal vector in the direction of the swap
+var swapDirection = null;
+// For precomputing the initial positions of the tiles to be swapped
+var lockedPos;
+var swappedPos;
+
 window.onload = init;
 
 function init()
@@ -199,18 +210,41 @@ function update()
 
         var steps = floor(dTime / interval);
 
-        // Do something with dT = steps * interval
-        if (currentState === State.Rotating)
+        dTime = steps * interval / 1000; // Now dTime is in seconds
+
+        var direction;
+        switch (currentState)
         {
-            var direction = sign(targetAngle - angle);
-            angle += direction * (steps*interval/1000) * omega;
+        case State.Rotating:
+            direction = sign(targetAngle - angle);
+            angle += direction * dTime * omega;
             if (direction * angle >= direction * targetAngle)
             {
                 angle = targetAngle % (2*pi);
                 currentState = State.Idle;
             }
+
+            break;
+        case State.HexSwap:
+            direction = sign(targetT - currentT);
+            currentT += direction * dTime * swapV;
+
+            lockedHex.geometry.x = lockedPos.x + swapDirection.x * currentT;
+            lockedHex.geometry.y = lockedPos.y + swapDirection.y * currentT;
+
+            swappedHex.geometry.x = swappedPos.x - swapDirection.x * currentT;
+            swappedHex.geometry.y = swappedPos.y - swapDirection.y * currentT;
+
+            if (direction * currentT > direction * targetT)
+            {
+                currentT = targetT;
+                grid.swap(lockedHex, swappedHex);
+                lockedHex = null;
+                swappedHex = null;
+                currentState = State.Idle;
+                console.log(Date.now());
+            }
         }
-        //
 
         drawScreen();
     }
@@ -231,8 +265,18 @@ function drawScreen()
     if (highlightedHex)
         highlightedHex.geometry.render(true);
 
+
+    if (swappedHex)
+    {
+        swappedHex.geometry.render();
+        swappedHex.geometry.render(true);
+    }
+
     if (lockedHex)
+    {
+        lockedHex.geometry.render();
         lockedHex.geometry.render(true);
+    }
 
     gl.useProgram(null);
 
@@ -295,13 +339,48 @@ function handleMouseDown(event) {
         debugBox.find('#ydown').html(coords.y);
     }
 
+    var axial = grid.pixelToAxial(coords.x, coords.y);
+    var hex = grid.get(axial.q, axial.r);
+
+    if (!hex)
+        return;
+
     switch(currentState)
     {
     case State.Idle:
-        var axial = grid.pixelToAxial(coords.x, coords.y);
-        lockedHex = grid.get(axial.q, axial.r);
+        lockedHex = hex;
 
         currentState = State.HexSelected;
+        break;
+    case State.HexSelected:
+        if (grid.manhattanDistance(hex, lockedHex) === 1)
+        {
+            swappedHex = hex;
+
+            lockedPos = {
+                x: lockedHex.a * iq.x + lockedHex.b * ir.x,
+                y: lockedHex.a * iq.y + lockedHex.b * ir.y,
+            };
+            swappedPos = {
+                x: swappedHex.a * iq.x + swappedHex.b * ir.x,
+                y: swappedHex.a * iq.y + swappedHex.b * ir.y,
+            };
+
+            var dx = swappedPos.x - lockedPos.x;
+            var dy = swappedPos.y - lockedPos.y;
+            var norm = sqrt(dx*dx + dy*dy);
+
+            swapDirection = {
+                x: dx / norm,
+                y: dy / norm,
+            };
+            currentT = 0;
+            targetT = hexD;
+
+            currentState = State.HexSwap;
+
+            console.log(Date.now());
+        }
         break;
     }
 }
@@ -367,3 +446,4 @@ function CheckError(msg)
         messageBox.html(errMsg);
     }
 }
+

@@ -60,6 +60,43 @@ function Grid(size, nTypes, colorGenerator) {
     }
 }
 
+Grid.prototype.swap = function(hex1, hex2) {
+    var q1 = hex1.a;
+    var r1 = hex1.b;
+    var q2 = hex2.a;
+    var r2 = hex2.b;
+
+    var i1 = q1 + (this.size - 1);
+    var j1 = r1 + min(i1, this.size - 1);
+
+    var i2 = q2 + (this.size - 1);
+    var j2 = r2 + min(i2, this.size - 1);
+
+    var atemp = hex1.a;
+    var btemp = hex1.b;
+    var ctemp = hex1.c;
+
+    hex1.a = hex2.a;
+    hex1.b = hex2.b;
+    hex1.c = hex2.c;
+
+    hex2.a = atemp;
+    hex2.b = btemp;
+    hex2.c = ctemp;
+
+    var center1 = this.axialToPixel(hex1.a, hex1.b);
+    var center2 = this.axialToPixel(hex2.a, hex2.b);
+
+    hex1.geometry.x = center1.x;
+    hex1.geometry.y = center1.y;
+
+    hex2.geometry.x = center2.x;
+    hex2.geometry.y = center2.y;
+
+    this.grid[i1][j1] = hex2;
+    this.grid[i2][j2] = hex1;
+};
+
 Grid.prototype.axialToPixel = function(q, r) {
     return {
         x: 3/2 * q,

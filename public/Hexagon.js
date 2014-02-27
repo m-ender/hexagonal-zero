@@ -1,14 +1,13 @@
-// Distance from the centre to each vertex
-var size = 1;
-var width = 2*size;
-var height = sqrt(3) * size;
+// Set up vertices
+var width = 2*hexSize;
+var height = sqrt(3) * hexSize;
 
-var hexagonCoords = [ size,    0,
-                      size/2,  height/2,
-                     -size/2,  height/2,
-                     -size,    0,
-                     -size/2, -height/2,
-                      size/2, -height/2 ];
+var hexagonCoords = [ hexSize,    0,
+                      hexSize/2,  height/2,
+                     -hexSize/2,  height/2,
+                     -hexSize,    0,
+                     -hexSize/2, -height/2,
+                      hexSize/2, -height/2 ];
 
 
 var hexagonVertices = {};
@@ -35,6 +34,12 @@ function Hexagon(x, y, color)
 
     this.color = color || [0, 0, 0];
 }
+
+// Convenient setters
+Hexagon.prototype.move = function(x, y) {
+    this.x = x;
+    this.y = y;
+};
 
 Hexagon.prototype.hide = function() { this.hidden = true; };
 Hexagon.prototype.show = function() { this.hidden = false; };
