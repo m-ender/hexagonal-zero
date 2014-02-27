@@ -97,6 +97,10 @@ Grid.prototype.swap = function(hex1, hex2) {
     this.grid[i2][j2] = hex1;
 };
 
+Grid.prototype.hasMatches = function() {
+    return false;
+};
+
 Grid.prototype.axialToPixel = function(q, r) {
     return {
         x: 3/2 * q,

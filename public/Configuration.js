@@ -17,4 +17,4 @@ var hexD = hexSize * sqrt(3);
 var omega = pi/3;
 
 // Speed of hexes during a swap
-var swapV = 2*hexD;
+var swapV = 3*hexD;

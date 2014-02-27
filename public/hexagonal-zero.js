@@ -32,6 +32,7 @@ var State = {
     Rotating: "Rotating",
     HexSelected: "HexSelected",
     HexSwap: "HexSwap",
+    HexUnswap: "HexUnswap",
 };
 var currentState;
 
@@ -226,8 +227,7 @@ function update()
 
             break;
         case State.HexSwap:
-            direction = sign(targetT - currentT);
-            currentT += direction * dTime * swapV;
+            currentT += dTime * swapV;
 
             lockedHex.geometry.x = lockedPos.x + swapDirection.x * currentT;
             lockedHex.geometry.y = lockedPos.y + swapDirection.y * currentT;
@@ -235,15 +235,45 @@ function update()
             swappedHex.geometry.x = swappedPos.x - swapDirection.x * currentT;
             swappedHex.geometry.y = swappedPos.y - swapDirection.y * currentT;
 
-            if (direction * currentT > direction * targetT)
+            if (currentT >= targetT)
             {
                 currentT = targetT;
                 grid.swap(lockedHex, swappedHex);
+                if (grid.hasMatches())
+                {
+                    lockedHex = null;
+                    swappedHex = null;
+                    currentState = State.Idle;
+                }
+                else
+                {
+                    grid.swap(lockedHex, swappedHex);
+                    targetT = 0;
+                    currentState = State.HexUnswap;
+                }
+            }
+            break;
+        case State.HexUnswap:
+            currentT -= dTime * swapV;
+
+            if (currentT <= targetT)
+            {
+                currentT = targetT;
+                currentState = State.Idle;
+            }
+
+            lockedHex.geometry.x = lockedPos.x + swapDirection.x * currentT;
+            lockedHex.geometry.y = lockedPos.y + swapDirection.y * currentT;
+
+            swappedHex.geometry.x = swappedPos.x - swapDirection.x * currentT;
+            swappedHex.geometry.y = swappedPos.y - swapDirection.y * currentT;
+
+            if (currentState === State.Idle)
+            {
                 lockedHex = null;
                 swappedHex = null;
-                currentState = State.Idle;
-                console.log(Date.now());
             }
+            break;
         }
 
         drawScreen();
@@ -378,8 +408,6 @@ function handleMouseDown(event) {
             targetT = hexD;
 
             currentState = State.HexSwap;
-
-            console.log(Date.now());
         }
         break;
     }
