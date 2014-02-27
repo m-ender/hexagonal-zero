@@ -1,9 +1,32 @@
-// Basis vectors along q and r
+// Most of the algorithms in here are taking from this amazing article:
+// http://www.redblobgames.com/grids/hexagons
+// We're using axial coordinates for storage and cubic coordinates for
+// most algorithms. Note that we're referring to the cubic coordinates
+// as a, b, c, in order to distinguish them from the pixel space
+// coordinates x, y, z. As in the article, we assign the axial axes as
+// follows: q = a, r = c.
+// The grid uses flat-top hexagons, with (0,0,0) being at the center.
+// If the grid is at its default orientation, +a points to the right,
+// +b to the top left, +c to the bottom left.
+
+// Basis vectors along a, b and c
+var ia = { x: 3/2,
+           y: 0    };
+
+var ib = { x: -3/4,
+           y: 3*sqrt(3)/4 };
+
+var ic = { x: -3/4,
+           y: -3*sqrt(3)/4 };
+
+// Basis vectors along q and r. These are different from ia and ib,
+// because they incorporate implicit changes in c as well.
 var iq = { x: 3/2,
            y: -sqrt(3)/2 };
 
 var ir = { x: 0,
            y: -sqrt(3) };
+
 
 // Size is the number of hexagonal rings in the grid (including the center)
 function Grid(size, nTypes, colorGenerator) {
@@ -18,16 +41,16 @@ function Grid(size, nTypes, colorGenerator) {
 
         for (var r = -size + 1; r <= size - 1; ++r)
         {
-            var s = - q - r;
-            if (abs(s) >= size)
+            var c = - q - r;
+            if (abs(c) >= size)
                 continue;
 
             var center = this.axialToPixel(q,r);
             var type = floor(Math.random() * nTypes);
             column.push({
-                q: q,
-                r: r,
-                s: s,
+                a: q,
+                b: r,
+                c: c,
                 type: type,
                 geometry: new Hexagon(center.x, center.y, colorGenerator.getColor(type)),
             });
@@ -45,34 +68,34 @@ Grid.prototype.axialToPixel = function(q, r) {
 };
 
 Grid.prototype.pixelToAxial = function(x, y) {
-    var q = 2/3 * x;
-    var r = (- sqrt(3)*y - x)/3;
-    var s = - q - r;
+    var a = 2/3 * x;
+    var b = (- sqrt(3)*y - x)/3;
+    var c = - a - b;
 
-    var rq = round(q);
-    var rr = round(r);
-    var rs = round(s);
+    var ra = round(a);
+    var rb = round(b);
+    var rc = round(c);
 
-    var dq = abs(q - rq);
-    var dr = abs(r - rr);
-    var ds = abs(s - rs);
+    var da = abs(a - ra);
+    var db = abs(b - rb);
+    var dc = abs(c - rc);
 
-    if (dq > dr && dq > ds)
-        rq = -rr-rs;
-    else if (dr > ds)
-        rr = -rq-rs;
+    if (da > db && da > dc)
+        ra = -rb-rc;
+    else if (db > dc)
+        rb = -ra-rc;
 
     return {
-        q: rq,
-        r: rr,
+        q: ra,
+        r: rb,
     };
 };
 
 Grid.prototype.get = function(q, r) {
-    var s = - q - r;
+    var c = - q - r;
     if (abs(q) >= this.size ||
         abs(r) >= this.size ||
-        abs(s) >= this.size)
+        abs(c) >= this.size)
         return null;
 
     var i = q + (this.size - 1);
