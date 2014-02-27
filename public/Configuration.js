@@ -7,3 +7,6 @@ var maxCoord = 1/renderScale;
 
 var nColors = 6;
 var gridSize = 6;
+
+// Angular velocity in radians per second
+var omega = pi/3;

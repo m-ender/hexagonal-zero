@@ -44,8 +44,8 @@
 
             // The render scale shrinks or grows the viewport and refers to which percentage
             // of the screen will be filled by the [-1, 1] coordinate range.
-            gl_Position = vec4( x * cos(uAngle) + y * sin(uAngle),
-                               -x * sin(uAngle) + y * cos(uAngle),
+            gl_Position = vec4( x * cos(uAngle) - y * sin(uAngle),
+                                x * sin(uAngle) + y * cos(uAngle),
                                0,
                                aPos.w);
         }

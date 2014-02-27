@@ -25,8 +25,14 @@ var lastTime;
 
 // Rotation angle of the entire grid
 var angle = 0;
+var targetAngle;
 
-var mouseDown = false;
+var State = {
+    Idle: "Idle",
+    Rotating: "Rotating",
+};
+var currentState;
+
 var highlightedHex = null;
 
 window.onload = init;
@@ -50,6 +56,7 @@ function init()
     document.addEventListener('mousedown', handleMouseDown, false);
     document.addEventListener('mouseup', handleMouseUp, false);
     document.addEventListener('mousemove', handleMouseMove, false);
+    document.addEventListener('keypress', handleCharacterInput, false);
 
     messageBox = $('#message');
     debugBox = $('#debug');
@@ -90,8 +97,9 @@ function init()
     gl.useProgram(null);
 
     prepareHexagons();
-
     grid = new Grid(gridSize, nColors, colorGenerator);
+
+    currentState = State.Idle;
 
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
@@ -188,7 +196,17 @@ function update()
         var steps = floor(dTime / interval);
 
         // Do something with dT = steps * interval
-        //angle += (steps*interval/1000)*pi/3;
+        if (currentState === State.Rotating)
+        {
+            var direction = sign(targetAngle - angle);
+            angle += direction * (steps*interval/1000) * omega;
+            if (direction * angle >= direction * targetAngle)
+            {
+                angle = targetAngle % (2*pi);
+                currentState = State.Idle;
+            }
+        }
+        //
 
         drawScreen();
     }
@@ -264,6 +282,22 @@ function handleMouseUp(event) {
     mouseDown = false;
 }
 
+function handleCharacterInput(event) {
+    var character = String.fromCharCode(event.charCode);
+
+    switch (character)
+    {
+    case '+':
+        if (currentState === State.Idle)
+            rotateGrid();
+        break;
+    case '-':
+        if (currentState === State.Idle)
+            rotateGrid(true);
+        break;
+    }
+}
+
 // Takes the mouse event and the rectangle to normalise for
 // Outputs object with x, y coordinates in [-maxCoord,maxCoord] with positive
 // y pointing upwards.
@@ -273,9 +307,17 @@ function normaliseCursorCoordinates(event, rect)
     var x = (2*(event.clientX - rect.left) / resolution - 1) / renderScale;
     var y = (1 - 2*(event.clientY - rect.top) / resolution) / renderScale; // invert, to make positive y point upwards
     return {
-        x: x*cos(angle) - y*sin(angle),
-        y: x*sin(angle) + y*cos(angle)
+        x:  x*cos(angle) + y*sin(angle),
+        y: -x*sin(angle) + y*cos(angle)
     };
+}
+
+// ccw is an optional flag to initiate a counter-clockwise rotation
+// (clockwise is default)
+function rotateGrid(ccw)
+{
+    currentState = State.Rotating;
+    targetAngle = ccw ? (angle - pi/3) : (angle + pi/3);
 }
 
 function CheckError(msg)
