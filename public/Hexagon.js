@@ -9,7 +9,6 @@ var hexagonCoords = [ hexSize,    0,
                      -hexSize/2, -height/2,
                       hexSize/2, -height/2 ];
 
-
 var hexagonVertices = {};
 
 // Make sure to call this before trying to render a hexagon
@@ -25,7 +24,8 @@ function prepareHexagons()
 
 // The first two parameters are the coordinates of the hexagon's center.
 // The color is optional (default black).
-function Hexagon(x, y, color)
+// The scale is optional, the default is read from the global "defaultScale".
+function Hexagon(x, y, color, scale)
 {
     this.hidden = false;
 
@@ -33,12 +33,22 @@ function Hexagon(x, y, color)
     this.y = y;
 
     this.color = color || [0, 0, 0];
+
+    this.scale = scale || defaultScale;
+    this.baseScale = this.scale;
 }
 
 // Convenient setters
 Hexagon.prototype.move = function(x, y) {
     this.x = x;
     this.y = y;
+};
+
+// scale should be relative to the this.baseScale (i.e., pass
+// in 1 to resize to base scale; 1 is also the default).
+Hexagon.prototype.resize = function(scale) {
+    if (scale === undefined) scale = 1;
+    this.scale = this.baseScale * scale;
 };
 
 Hexagon.prototype.hide = function() { this.hidden = true; };
@@ -52,6 +62,7 @@ Hexagon.prototype.render = function(outline) {
     gl.useProgram(hexagonProgram.program);
 
     gl.uniform2f(hexagonProgram.uCenter, this.x, this.y);
+    gl.uniform1f(hexagonProgram.uScale, this.scale);
 
     gl.enableVertexAttribArray(hexagonProgram.aPos);
     gl.bindBuffer(gl.ARRAY_BUFFER, hexagonVertices.bufferId);

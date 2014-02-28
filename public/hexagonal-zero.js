@@ -40,6 +40,8 @@ var highlightedHex = null;
 var lockedHex = null;
 var swappedHex = null;
 
+var startTime;
+
 // For swapping tiles. T is an interpolation parameter
 // between the initial positions (0) and the final positions
 // (hexD).
@@ -102,6 +104,7 @@ function init()
     hexagonProgram.uAngle = gl.getUniformLocation(hexagonProgram.program, "uAngle");
     hexagonProgram.uCenter = gl.getUniformLocation(hexagonProgram.program, "uCenter");
     hexagonProgram.uColor = gl.getUniformLocation(hexagonProgram.program, "uColor");
+    hexagonProgram.uScale = gl.getUniformLocation(hexagonProgram.program, "uScale");
     // add attribute locations
     hexagonProgram.aPos = gl.getAttribLocation(hexagonProgram.program, "aPos");
 
@@ -216,6 +219,9 @@ function update()
         var direction;
         switch (currentState)
         {
+        case State.HexSelected:
+            lockedHex.geometry.resize(1 + scaleAmplitude * sin(2*pi*(currentTime - startTime) / (1000 * scalePeriod)));
+            break;
         case State.Rotating:
             direction = sign(targetAngle - angle);
             angle += direction * dTime * omega;
@@ -378,12 +384,14 @@ function handleMouseDown(event) {
     {
     case State.Idle:
         lockedHex = hex;
-
+        startTime = Date.now(); // for smooth start of oscillation
         currentState = State.HexSelected;
         break;
     case State.HexSelected:
         if (grid.manhattanDistance(hex, lockedHex) === 1)
         {
+            lockedHex.geometry.resize();
+
             highlightedHex = null;
             swappedHex = hex;
 

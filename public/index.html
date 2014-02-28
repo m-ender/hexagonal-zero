@@ -29,6 +29,7 @@
         uniform float uAngle;
 
         uniform vec2 uCenter;
+        uniform float uScale; // scale of this particular hex
         uniform vec4 uColor;
 
         attribute vec4 aPos;
@@ -39,8 +40,8 @@
         {
             vColor = uColor;
 
-            float x = uRenderScale * (uCenter.x + aPos.x);
-            float y = uRenderScale * (uCenter.y + aPos.y);
+            float x = uRenderScale * (uCenter.x + uScale * aPos.x);
+            float y = uRenderScale * (uCenter.y + uScale * aPos.y);
 
             // The render scale shrinks or grows the viewport and refers to which percentage
             // of the screen will be filled by the [-1, 1] coordinate range.
