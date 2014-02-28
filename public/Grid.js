@@ -62,6 +62,22 @@ var iq = { x: 3/2,
 var ir = { x: 0,
            y: -sqrt(3) };
 
+// The name of the orientation refers to the axis pointing to the right.
+// The value are designed such that you can simply increment or
+// decrement the current orientation when rotating the grid (by
+// modulus 6, of course) - then you only have use this "enum" to
+// find out the current orientation.
+// A counter-clockwise orientation corresponds to an increment in
+// the orientation.
+var Orientation = {
+    PlusX:  0,
+    MinusY: 1,
+    PlusZ:  2,
+    MinusX: 3,
+    PlusY:  4,
+    MinusZ: 5,
+};
+
 
 // Size is the number of hexagonal rings in the grid (including the center)
 function Grid(size, nTypes, colorGenerator) {
@@ -93,7 +109,21 @@ function Grid(size, nTypes, colorGenerator) {
 
         this.grid.push(column);
     }
+
+    this.orientation = Orientation.PlusX;
 }
+
+// cw is an optional flag to initiate a clockwise rotation
+// (counter-clockwise is default)
+Grid.prototype.rotate = function(cw) {
+    if (cw)
+        // We increment by 5 instead of decrementing by 1, in order
+        // to remain in the positive regime. Otherwise the modulus
+        // will return a negative number.
+        this.orientation = (this.orientation + 5) % 6;
+    else
+        this.orientation = (this.orientation + 1) % 6;
+};
 
 Grid.prototype.swap = function(hex1, hex2) {
     var q1 = hex1.a;
@@ -124,6 +154,16 @@ Grid.prototype.swap = function(hex1, hex2) {
 
     this.grid[i1][j1] = hex2;
     this.grid[i2][j2] = hex1;
+};
+
+Grid.prototype.remove = function(hex) {
+    var q = hex.a;
+    var r = hex.b;
+
+    var i = q + (this.size - 1);
+    var j = r + min(i, this.size - 1);
+
+    delete this.grid[i][j];
 };
 
 Grid.prototype.hasMatches = function() {
@@ -337,7 +377,8 @@ Grid.prototype.render = function() {
         var column = this.grid[i];
         for (var j = 0; j < column.length; ++j)
         {
-            column[j].geometry.render();
+            if (column[j])
+                column[j].geometry.render();
         }
     }
 };

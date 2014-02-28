@@ -22,6 +22,9 @@ var defaultScale = 0.95;
 var scaleAmplitude = 0.05;
 var scalePeriod = 1; // in seconds
 
+// How fast do hexes shrink when dissolving? Given in hexSize per second
+var dissolveSpeed = 1.5;
+
 // Angular velocity in radians per second
 var omega = pi/3;
 

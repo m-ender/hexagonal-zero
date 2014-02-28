@@ -33,6 +33,7 @@ var State = {
     HexSelected: "HexSelected",
     HexSwap: "HexSwap",
     HexUnswap: "HexUnswap",
+    RemovingMatches: "RemovingMatches",
 };
 var currentState;
 
@@ -257,7 +258,7 @@ function update()
                 {
                     lockedHex = null;
                     swappedHex = null;
-                    currentState = State.Idle;
+                    removeMatches();
                 }
                 else
                 {
@@ -285,6 +286,22 @@ function update()
                 matchedHexes = grid.getMatchedHexes();
                 currentState = State.Idle;
             }
+            break;
+        case State.RemovingMatches:
+            var hex;
+            for (var i = 0; i < matchedHexes.length; ++i)
+            {
+                hex = matchedHexes[i];
+                hex.geometry.resize(1 - (currentTime - startTime) / 1000 * dissolveSpeed);
+            }
+            if (hex.geometry.scale < 0)
+            {
+                matchedHexes = null;
+                currentState = State.Idle;
+            }
+
+
+            // TODO: Refill grid
             break;
         }
 
@@ -479,12 +496,24 @@ function normaliseCursorCoordinates(event, rect)
     };
 }
 
-// ccw is an optional flag to initiate a counter-clockwise rotation
-// (clockwise is default)
-function rotateGrid(ccw)
+// cw is an optional flag to initiate a clockwise rotation
+// (counter-clockwise is default)
+function rotateGrid(cw)
 {
     currentState = State.Rotating;
-    targetAngle = ccw ? (angle - pi/3) : (angle + pi/3);
+    targetAngle = cw ? (angle - pi/3) : (angle + pi/3);
+    this.grid.rotate(cw);
+}
+
+function removeMatches()
+{
+    for (var i = 0; i < matchedHexes.length; ++i)
+    {
+        var hex = matchedHexes[i];
+        grid.remove(hex);
+        startTime = Date.now();
+    }
+    currentState = State.RemovingMatches;
 }
 
 function CheckError(msg)
