@@ -22,9 +22,10 @@
 //  2    X  X  X  X  X  .  .
 //  3    X  X  X  X  .  .  .
 //
-// You can iterate over such a range by iterating as follows:
+// You can iterate over such a range, left to right, top to bottom,
+// by iterating as follows:
 //   a over [-size+1, size-1]
-//     c over [-size+1 + min(0,a), size-1 - max(0,a)]
+//     c over [-size+1 - min(0,a), size-1 - max(0,a)]
 // The same works for all cyclic permutations of a, b, c.
 //
 // Note that our actual storage does not include those empty corners.
@@ -70,12 +71,12 @@ var ir = { x: 0,
 // A counter-clockwise orientation corresponds to an increment in
 // the orientation.
 var Orientation = {
-    PlusX:  0,
-    MinusY: 1,
-    PlusZ:  2,
-    MinusX: 3,
-    PlusY:  4,
-    MinusZ: 5,
+    PlusA:  0,
+    MinusB: 1,
+    PlusC:  2,
+    MinusA: 3,
+    PlusB:  4,
+    MinusC: 5,
 };
 
 
@@ -110,7 +111,7 @@ function Grid(size, nTypes, colorGenerator) {
         this.grid.push(column);
     }
 
-    this.orientation = Orientation.PlusX;
+    this.orientation = Orientation.PlusA;
 }
 
 // cw is an optional flag to initiate a clockwise rotation
@@ -148,9 +149,6 @@ Grid.prototype.swap = function(hex1, hex2) {
     hex2.a = atemp;
     hex2.b = btemp;
     hex2.c = ctemp;
-
-    var center1 = this.axialToPixel(hex1.a, hex1.b);
-    var center2 = this.axialToPixel(hex2.a, hex2.b);
 
     this.grid[i1][j1] = hex2;
     this.grid[i2][j2] = hex1;
@@ -242,9 +240,9 @@ Grid.prototype.getMatchedHexes = function() {
     var that = this;
     var collectHexes = function (p, i, k_min, k_max) {
         var pos = {
-            x: null,
-            y: null,
-            z: null,
+            a: null,
+            b: null,
+            c: null,
         };
 
         pos[p.i] = i;
@@ -254,8 +252,8 @@ Grid.prototype.getMatchedHexes = function() {
         for (pos[p.k] = k_min; pos[p.k] <= k_max; ++pos[p.k])
         {
             pos[p.j] = -pos[p.i]-pos[p.k];
-            var q = pos.x;
-            var r = pos.z;
+            var q = pos.a;
+            var r = pos.c;
             var hex = that.get(q,r);
 
             if (!hex.marked)
@@ -269,32 +267,34 @@ Grid.prototype.getMatchedHexes = function() {
     // We need to iterate over the grid once in each direction.
     // However, these iterations only differ by cycling through
     // the three cubic axes, so we do this by a fancy permutation
-    // loop.
+    // loop. The directions in the following comments correspond
+    // to the grid's orientation being the default PlusA.
     var permutations = [
-        { i: 'x', j: 'y', k: 'z' }, // traverse rows of constant x by z (columns top to bottom)
-        { i: 'y', j: 'z', k: 'x' }, // traverse rows of constant y by x (bottom left to top right)
-        { i: 'z', j: 'x', k: 'y' }, // traverse rows of constant z by y (bottom right to top left)
+        { i: 'a', j: 'b', k: 'c' }, // traverse rows of constant a by c (columns top to bottom)
+        { i: 'b', j: 'c', k: 'a' }, // traverse rows of constant b by a (bottom left to top right)
+        { i: 'c', j: 'a', k: 'b' }, // traverse rows of constant c by b (bottom right to top left)
     ];
 
     var pos = {
-        x: null,
-        y: null,
-        z: null,
+        a: null,
+        b: null,
+        c: null,
     };
 
     for (var permi = 0; permi < permutations.length; ++permi)
     {
         var p = permutations[permi];
-        // Search rows of constant x (vertical columns)
         for (pos[p.i] = -this.size+1; pos[p.i] <= this.size-1; ++pos[p.i])
         {
             matchLength = 1;
             lastType = null;
-            for (pos[p.k] = -this.size+1 + min(0,pos[p.i]); pos[p.k] <= this.size-1 - max(0,pos[p.i]); ++pos[p.k])
+            for (pos[p.k] = -this.size+1 - min(0,pos[p.i]);
+                 pos[p.k] <= this.size-1 - max(0,pos[p.i]);
+                 ++pos[p.k])
             {
                 pos[p.j] = -pos[p.i]-pos[p.k];
-                q = pos.x;
-                r = pos.z;
+                q = pos.a;
+                r = pos.c;
                 hex = this.get(q,r);
 
                 if (!hex) continue;
@@ -319,6 +319,133 @@ Grid.prototype.getMatchedHexes = function() {
     }
 
     return matchedHexes;
+};
+
+// This fills all existing gaps by moving the above cells down. It does not
+// refill the empty cells that will appear at the top.
+// Returns a list of all hexes that have been moved around.
+Grid.prototype.closeGaps = function() {
+    var shiftedHexes = [];
+
+    // We need to iterate over the grid in columns from bottom to top.
+    // However, how we assign "columns", "bottom" and "top" to the cubic
+    // axes depends on the orientation of the grid.
+    // p is going to be the permutation of the cubic axes (where we iterate
+    // over rows of constant 'i' along 'k'); dk is going to +/- 1 to indicate
+    // the direction from bottom to top.
+    var p, dk;
+    switch (this.orientation)
+    {
+        case Orientation.PlusA:
+            p = { i: 'a', j: 'b', k: 'c' };
+            dk = -1;
+            break;
+        case Orientation.PlusB:
+            p = { i: 'b', j: 'c', k: 'a' };
+            dk = -1;
+            break;
+        case Orientation.PlusC:
+            p = { i: 'c', j: 'a', k: 'b' };
+            dk = -1;
+            break;
+        case Orientation.MinusA:
+            p = { i: 'a', j: 'b', k: 'c' };
+            dk = +1;
+            break;
+        case Orientation.MinusB:
+            p = { i: 'b', j: 'c', k: 'a' };
+            dk = +1;
+            break;
+        case Orientation.MinusC:
+            p = { i: 'c', j: 'a', k: 'b' };
+            dk = +1;
+            break;
+    }
+
+    // We'll move cells from this position...
+    var fromPos = {
+        a: null,
+        b: null,
+        c: null,
+    };
+
+    // ...to this position.
+    var toPos = {
+        a: null,
+        b: null,
+        c: null,
+    };
+
+    // Initially they will be equal, but their difference will increase
+    // by 1 for each missing cell.
+    for (fromPos[p.i] = -this.size+1;
+         fromPos[p.i] <= this.size-1;
+         ++fromPos[p.i])
+    {
+        toPos[p.i] = fromPos[p.i];
+
+        // Figuring out the bounds is a bit tricky here, depending on which
+        // direction we need to walk the column. We could probably do this
+        // analytically in a single step, but it's conceptually easier, to
+        // just swap the bounds if dk is positive.
+        var k_bottom = this.size-1 - max(0,fromPos[p.i]);
+        var k_top = -this.size+1 - min(0,fromPos[p.i]);
+
+        if (dk > 0)
+        {
+            var temp = k_bottom;
+            k_bottom = k_top;
+            k_top = temp;
+        }
+
+        for (fromPos[p.k] = k_bottom, toPos[p.k] = k_bottom;
+             fromPos[p.k] !== k_top + dk; // I'm not sure if it's uglier to use !== or
+                                     // dk*k <= dk*k_top.
+             fromPos[p.k] += dk)
+        {
+            fromPos[p.j] = -fromPos[p.i]-fromPos[p.k];
+            var fromQ = fromPos.a;
+            var fromR = fromPos.c;
+
+            var fromIndex = this.axialToIndex(fromQ, fromR);
+            var hex = this.grid[fromIndex.i][fromIndex.j];
+
+            if (hex)
+            {
+                // Don't move the hex if fromPos and toPos are
+                // the same.
+                if (toPos[p.k] !== fromPos[p.k])
+                {
+                    toPos[p.j] = -toPos[p.i]-toPos[p.k];
+                    var toQ = toPos.a;
+                    var toR = toPos.c;
+
+                    var toIndex = this.axialToIndex(toQ, toR);
+                    this.grid[toIndex.i][toIndex.j] = hex;
+                    this.grid[fromIndex.i][fromIndex.j] = null;
+
+                    hex.a = toQ;
+                    hex.b = -toQ-toR;
+                    hex.c = toR;
+
+                    // Fill a targetX/targetY variable, which can be
+                    // used to move the geometry to the new position.
+                    var center = this.axialToPixel(toQ, toR);
+                    hex.targetX = center.x;
+                    hex.targetY = center.y;
+
+                    shiftedHexes.push(hex);
+                }
+
+                toPos[p.k] += dk;
+            }
+            // else -> nothing ... This leads to fromPos being
+            // incremented while toPos remains the same, hence
+            // bridging the gap.
+        }
+    }
+
+    return shiftedHexes;
 };
 
 Grid.prototype.axialToPixel = function(q, r) {
@@ -352,7 +479,15 @@ Grid.prototype.pixelToAxial = function(x, y) {
     };
 };
 
+// Returns a hex given axial coordinates
 Grid.prototype.get = function(q, r) {
+    var index = this.axialToIndex(q,r);
+
+    return index ? this.grid[index.i][index.j] : null;
+};
+
+// Converts axial coordinates into grid-array indices
+Grid.prototype.axialToIndex = function(q, r) {
     var c = - q - r;
     if (abs(q) >= this.size ||
         abs(r) >= this.size ||
@@ -361,8 +496,10 @@ Grid.prototype.get = function(q, r) {
 
     var i = q + (this.size - 1);
     var j = r + min(i, this.size - 1);
-
-    return this.grid[i][j];
+    return {
+        i: i,
+        j: j,
+    };
 };
 
 Grid.prototype.manhattanDistance = function(hex1, hex2) {

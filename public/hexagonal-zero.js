@@ -34,6 +34,7 @@ var State = {
     HexSwap: "HexSwap",
     HexUnswap: "HexUnswap",
     RemovingMatches: "RemovingMatches",
+    CloseGaps: "CloseGaps",
 };
 var currentState;
 
@@ -41,6 +42,7 @@ var highlightedHex = null;
 var lockedHex = null;
 var swappedHex = null;
 var matchedHexes = null;
+var shiftedHexes = null;
 
 var startTime;
 
@@ -208,6 +210,9 @@ function InitShaders(gl, vertexShaderId, fragmentShaderId)
 // This is a fixed-framerate game loop. dT is not constant, though
 function update()
 {
+    var i;
+    var hex;
+
     window.requestAnimFrame(update, canvas);
 
     currentTime = Date.now();
@@ -288,20 +293,50 @@ function update()
             }
             break;
         case State.RemovingMatches:
-            var hex;
-            for (var i = 0; i < matchedHexes.length; ++i)
+            for (i = 0; i < matchedHexes.length; ++i)
             {
                 hex = matchedHexes[i];
-                hex.geometry.resize(1 - (currentTime - startTime) / 1000 * dissolveSpeed);
+                hex.geometry.resize(1 - (currentTime - startTime) / 1000 * dissolveV);
             }
             if (hex.geometry.scale < 0)
             {
                 matchedHexes = null;
-                currentState = State.Idle;
+
+                shiftedHexes = grid.closeGaps();
+
+                currentState = State.CloseGaps;
+            }
+            break;
+        case State.CloseGaps:
+            for (i = 0; i < shiftedHexes.length; ++i)
+            {
+                hex = shiftedHexes[i];
+
+                // Get a unit vector from the hex to its target
+                var dx = hex.targetX - hex.geometry.x;
+                var dy = hex.targetY - hex.geometry.y;
+                var norm = sqrt(dx*dx+dy*dy);
+                dx /= norm;
+                dy /= norm;
+
+                hex.geometry.x += dx * fallingV * dTime;
+                hex.geometry.y += dy * fallingV * dTime;
+
+                // This is quite a hack: remove the hex from the
+                // shifted hexes, if either component changed it's sign
+                if ((hex.targetX === hex.geometry.x &&
+                    hex.targetY === hex.geometry.y) ||
+                    dx * (hex.targetX - hex.geometry.x) < 0 ||
+                    dy * (hex.targetY - hex.geometry.y) < 0)
+                {
+                    hex.geometry.x = hex.targetX;
+                    hex.geometry.y = hex.targetY;
+                    shiftedHexes.splice(i,1);
+                    --i;
+                }
             }
 
-
-            // TODO: Refill grid
+            // TODO: Refill empty cells at the top of the grid.
             break;
         }
 
@@ -370,9 +405,9 @@ function handleMouseMove(event) {
 
         if (debug)
         {
-            debugBox.find('#hexq').html(axial.q);
-            debugBox.find('#hexr').html(axial.r);
-            debugBox.find('#hexs').html(-axial.q-axial.r);
+            debugBox.find('#hexa').html(axial.q);
+            debugBox.find('#hexb').html(-axial.q-axial.r);
+            debugBox.find('#hexc').html(axial.r);
         }
         break;
     case State.HexSelected:
@@ -381,9 +416,9 @@ function handleMouseMove(event) {
             highlightedHex = hex;
             if (debug)
             {
-                debugBox.find('#hexq').html(axial.q);
-                debugBox.find('#hexr').html(axial.r);
-                debugBox.find('#hexs').html(-axial.q-axial.r);
+                debugBox.find('#hexa').html(axial.q);
+                debugBox.find('#hexb').html(-axial.q-axial.r);
+                debugBox.find('#hexc').html(axial.r);
             }
         }
         else

@@ -23,9 +23,12 @@ var scaleAmplitude = 0.05;
 var scalePeriod = 1; // in seconds
 
 // How fast do hexes shrink when dissolving? Given in hexSize per second
-var dissolveSpeed = 1.5;
+var dissolveV = 1.5;
 
-// Angular velocity in radians per second
+// How fast do hexes fall to fill gaps?
+var fallingV = 3*hexD;
+
+// Angular velocity of the grid. Given in radians per second
 var omega = pi/3;
 
 // Speed of hexes during a swap
