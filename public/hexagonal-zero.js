@@ -39,6 +39,7 @@ var currentState;
 var highlightedHex = null;
 var lockedHex = null;
 var swappedHex = null;
+var matchedHexes = null;
 
 var startTime;
 
@@ -117,6 +118,10 @@ function init()
 
     prepareHexagons();
     grid = new Grid(gridSize, nColors, colorGenerator);
+
+    // TODO: Generate a sensible grid (one that doesn't contain matches, but
+    // but contains valid moves).
+    matchedHexes = grid.getMatchedHexes();
 
     currentState = State.Idle;
 
@@ -247,7 +252,8 @@ function update()
             if (currentT === hexD)
             {
                 grid.swap(lockedHex, swappedHex);
-                if (grid.hasMatches())
+                matchedHexes = grid.getMatchedHexes();
+                if (matchedHexes.length)
                 {
                     lockedHex = null;
                     swappedHex = null;
@@ -276,6 +282,7 @@ function update()
             {
                 lockedHex = null;
                 swappedHex = null;
+                matchedHexes = grid.getMatchedHexes();
                 currentState = State.Idle;
             }
             break;
@@ -311,6 +318,15 @@ function drawScreen()
     {
         lockedHex.geometry.render();
         lockedHex.geometry.render(true);
+    }
+
+    if (matchedHexes)
+    {
+        for (var i = 0; i < matchedHexes.length; ++i)
+        {
+            matchedHexes[i].geometry.render();
+            matchedHexes[i].geometry.render(true);
+        }
     }
 
     gl.useProgram(null);

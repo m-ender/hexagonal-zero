@@ -8,6 +8,41 @@
 // The grid uses flat-top hexagons, with (0,0,0) being at the center.
 // If the grid is at its default orientation, +a points to the right,
 // +b to the top left, +c to the bottom left.
+// Indexing by any two cubic coordinates, the range of values in the
+// hexagonal grid looks like this (taking the example of a and c with
+// a grid size of 3):
+//
+//    a -3 -2 -1  0  1  2  3
+//  c
+// -3    .  .  .  X  X  X  X
+// -2    .  .  X  X  X  X  X
+// -1    .  X  X  X  X  X  X
+//  0    X  X  X  X  X  X  X
+//  1    X  X  X  X  X  X  .
+//  2    X  X  X  X  X  .  .
+//  3    X  X  X  X  .  .  .
+//
+// You can iterate over such a range by iterating as follows:
+//   a over [-size+1, size-1]
+//     c over [-size+1 + min(0,a), size-1 - max(0,a)]
+// The same works for all cyclic permutations of a, b, c.
+//
+// Note that our actual storage does not include those empty corners.
+// We store the grid in a 2D array (i.e. array of arrays) where the
+// first index i varies with q (or a) and the second index j with r (or b).
+// However, in general i != q and j != r. Imagine that in the above image
+// we eliminate the top left corner by moving the first three columns to
+// the top, then this is how we index our storage:
+//
+//    i  0  1  2  3  4  5  6
+//  j
+//  0    X  X  X  X  X  X  X
+//  1    X  X  X  X  X  X  X
+//  2    X  X  X  X  X  X  X
+//  3    X  X  X  X  X  X  X
+//  4       X  X  X  X  X
+//  5          X  X  X
+//  6             X
 
 // Basis vectors along a, b and c
 var ia = { x: 3/2,
@@ -103,6 +138,99 @@ Grid.prototype.hasMatches = function() {
     // the three cubic axes, so we do this by a fancy permutation
     // loop.
     var permutations = [
+        { i: 'a', j: 'b', k: 'c' }, // traverse rows of constant a by c (columns top to bottom)
+        { i: 'b', j: 'c', k: 'a' }, // traverse rows of constant b by a (bottom left to top right)
+        { i: 'c', j: 'a', k: 'b' }, // traverse rows of constant c by b (bottom right to top left)
+    ];
+
+    var pos = {
+        a: null,
+        b: null,
+        c: null,
+    };
+
+    for (var permi = 0; permi < permutations.length; ++permi)
+    {
+        var p = permutations[permi];
+        for (pos[p.i] = -this.size+1; pos[p.i] <= this.size-1; ++pos[p.i])
+        {
+            matchLength = 1;
+            lastType = null;
+            for (pos[p.k] = -this.size+1; pos[p.k] <= this.size-1; ++pos[p.k])
+            {
+                pos[p.j] = -pos[p.i]-pos[p.k];
+                q = pos.a;
+                r = pos.c;
+                hex = this.get(q,r);
+
+                if (!hex) continue;
+
+                if (hex.type === lastType)
+                {
+                    if (++matchLength >= 3) return true;
+                }
+                else
+                {
+                    matchLength = 1;
+                    lastType = hex.type;
+                }
+            }
+        }
+    }
+
+    return false;
+};
+
+// This just returns all hex cells that are part of a match, without any
+// information about which group of cells forms each match.
+Grid.prototype.getMatchedHexes = function() {
+    var q, r;
+    var lastType, matchLength;
+    var hex;
+
+    var matchedHexes = [];
+
+    // Unmark all cells
+    for (var i = 0; i < this.grid.length; ++i)
+        for (var j = 0; j < this.grid[i].length; ++j)
+            this.grid[i][j].marked = false;
+
+    // We need this in two places so create an internal helper function.
+    // Given permutation p, and row i it iterates over cell range
+    // [k_min, k_max] and saves all hexes to matchedHexes that haven't
+    // been saved there before.
+    var that = this;
+    var collectHexes = function (p, i, k_min, k_max) {
+        var pos = {
+            x: null,
+            y: null,
+            z: null,
+        };
+
+        pos[p.i] = i;
+
+        // Traverse the match again, saving each hex that hasn't
+        // been saved before
+        for (pos[p.k] = k_min; pos[p.k] <= k_max; ++pos[p.k])
+        {
+            pos[p.j] = -pos[p.i]-pos[p.k];
+            var q = pos.x;
+            var r = pos.z;
+            var hex = that.get(q,r);
+
+            if (!hex.marked)
+            {
+                matchedHexes.push(hex);
+                hex.marked = true;
+            }
+        }
+    };
+
+    // We need to iterate over the grid once in each direction.
+    // However, these iterations only differ by cycling through
+    // the three cubic axes, so we do this by a fancy permutation
+    // loop.
+    var permutations = [
         { i: 'x', j: 'y', k: 'z' }, // traverse rows of constant x by z (columns top to bottom)
         { i: 'y', j: 'z', k: 'x' }, // traverse rows of constant y by x (bottom left to top right)
         { i: 'z', j: 'x', k: 'y' }, // traverse rows of constant z by y (bottom right to top left)
@@ -122,7 +250,7 @@ Grid.prototype.hasMatches = function() {
         {
             matchLength = 1;
             lastType = null;
-            for (pos[p.k] = -this.size+1; pos[p.k] <= this.size-1; ++pos[p.k])
+            for (pos[p.k] = -this.size+1 + min(0,pos[p.i]); pos[p.k] <= this.size-1 - max(0,pos[p.i]); ++pos[p.k])
             {
                 pos[p.j] = -pos[p.i]-pos[p.k];
                 q = pos.x;
@@ -133,18 +261,24 @@ Grid.prototype.hasMatches = function() {
 
                 if (hex.type === lastType)
                 {
-                    if (++matchLength >= 3) return true;
+                    ++matchLength;
                 }
                 else
                 {
+                    if (matchLength >= 3)
+                        collectHexes(p, pos[p.i], pos[p.k] - matchLength, pos[p.k] - 1);
+
                     matchLength = 1;
                     lastType = hex.type;
                 }
             }
+
+            if (matchLength >= 3)
+                collectHexes(p, pos[p.i], pos[p.k] - matchLength, pos[p.k] - 1);
         }
     }
 
-    return false;
+    return matchedHexes;
 };
 
 Grid.prototype.axialToPixel = function(q, r) {
