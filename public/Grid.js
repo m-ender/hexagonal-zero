@@ -92,83 +92,54 @@ Grid.prototype.swap = function(hex1, hex2) {
 };
 
 Grid.prototype.hasMatches = function() {
-    var x, y, z, q, r;
+    var q, r;
     var lastType, matchLength;
     var hex;
 
     // TODO: Avoid traversing "empty corners" of rhombi.
 
-    // Search rows of constant x (vertical columns)
-    for (x = -this.size+1; x <= this.size-1; ++x)
+    // We need to iterate over the grid once in each direction.
+    // However, these iterations only differ by cycling through
+    // the three cubic axes, so we do this by a fancy permutation
+    // loop.
+    var permutations = [
+        { i: 'x', j: 'y', k: 'z' }, // traverse rows of constant x by z (columns top to bottom)
+        { i: 'y', j: 'z', k: 'x' }, // traverse rows of constant y by x (bottom left to top right)
+        { i: 'z', j: 'x', k: 'y' }, // traverse rows of constant z by y (bottom right to top left)
+    ];
+
+    var pos = {
+        x: null,
+        y: null,
+        z: null,
+    };
+
+    for (var permi = 0; permi < permutations.length; ++permi)
     {
-        matchLength = 1;
-        lastType = null;
-        for (z = -this.size+1; z <= this.size-1; ++z)
+        var p = permutations[permi];
+        // Search rows of constant x (vertical columns)
+        for (pos[p.i] = -this.size+1; pos[p.i] <= this.size-1; ++pos[p.i])
         {
-            q = x;
-            r = z;
-            hex = this.get(q,r);
-
-            if (!hex) continue;
-
-            if (hex.type === lastType)
+            matchLength = 1;
+            lastType = null;
+            for (pos[p.k] = -this.size+1; pos[p.k] <= this.size-1; ++pos[p.k])
             {
-                if (++matchLength >= 3) return true;
-            }
-            else
-            {
-                matchLength = 1;
-                lastType = hex.type;
-            }
-        }
-    }
+                pos[p.j] = -pos[p.i]-pos[p.k];
+                q = pos.x;
+                r = pos.z;
+                hex = this.get(q,r);
 
-    // Search rows of constant y (bottom left to top right)
-    for (y= -this.size+1; y <= this.size-1; ++y)
-    {
-        matchLength = 1;
-        lastType = null;
-        for (x = -this.size+1; x <= this.size-1; ++x)
-        {
-            q = x;
-            r = -x-y;
-            hex = this.get(q,r);
+                if (!hex) continue;
 
-            if (!hex) continue;
-
-            if (hex.type === lastType)
-            {
-                if (++matchLength >= 3) return true;
-            }
-            else
-            {
-                matchLength = 1;
-                lastType = hex.type;
-            }
-        }
-    }
-
-    // Search rows of constant z (bottom right to top left)
-    for (z= -this.size+1; z <= this.size-1; ++z)
-    {
-        matchLength = 1;
-        lastType = null;
-        for (y = -this.size+1; y <= this.size-1; ++y)
-        {
-            q = -y-z;
-            r = z;
-            hex = this.get(q,r);
-
-            if (!hex) continue;
-
-            if (hex.type === lastType)
-            {
-                if (++matchLength >= 3) return true;
-            }
-            else
-            {
-                matchLength = 1;
-                lastType = hex.type;
+                if (hex.type === lastType)
+                {
+                    if (++matchLength >= 3) return true;
+                }
+                else
+                {
+                    matchLength = 1;
+                    lastType = hex.type;
+                }
             }
         }
     }
