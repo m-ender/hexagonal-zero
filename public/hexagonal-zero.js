@@ -27,6 +27,8 @@ var lastTime;
 var angle = 0;
 var targetAngle;
 
+var clockwiseRotation = true;
+
 var State = {
     Idle: "Idle",
     Rotating: "Rotating",
@@ -35,6 +37,7 @@ var State = {
     HexUnswap: "HexUnswap",
     RemovingMatches: "RemovingMatches",
     CloseGaps: "CloseGaps",
+    FillGaps: "FillGaps",
 };
 var currentState;
 
@@ -43,6 +46,7 @@ var lockedHex = null;
 var swappedHex = null;
 var matchedHexes = null;
 var shiftedHexes = null;
+var newHexes = null;
 
 var startTime;
 
@@ -336,7 +340,31 @@ function update()
                 }
             }
 
-            // TODO: Refill empty cells at the top of the grid.
+            if (shiftedHexes.length === 0)
+            {
+                shiftedHexes = null;
+                newHexes = grid.refill();
+                for (i = 0; i < newHexes.length; ++i)
+                    newHexes[i].geometry.resize(0);
+                startTime = currentTime;
+                currentState = State.FillGaps;
+            }
+            break;
+        case State.FillGaps:
+            for (i = 0; i < newHexes.length; ++i)
+            {
+                hex = newHexes[i];
+                hex.geometry.resize(min(1, (currentTime - startTime) / 1000 * growV));
+            }
+            if (hex.geometry.scale === hex.geometry.baseScale)
+            {
+                newHexes = null;
+                matchedHexes = grid.getMatchedHexes();
+                if (matchedHexes.length)
+                    removeMatches();
+                else
+                    rotateGrid(clockwiseRotation);
+            }
             break;
         }
 
@@ -464,12 +492,12 @@ function handleMouseDown(event) {
             swappedHex = hex;
 
             lockedPos = {
-                x: lockedHex.a * iq.x + lockedHex.b * ir.x,
-                y: lockedHex.a * iq.y + lockedHex.b * ir.y,
+                x: lockedHex.a * iq.x + lockedHex.c * ir.x,
+                y: lockedHex.a * iq.y + lockedHex.c * ir.y,
             };
             swappedPos = {
-                x: swappedHex.a * iq.x + swappedHex.b * ir.x,
-                y: swappedHex.a * iq.y + swappedHex.b * ir.y,
+                x: swappedHex.a * iq.x + swappedHex.c * ir.x,
+                y: swappedHex.a * iq.y + swappedHex.c * ir.y,
             };
 
             var dx = swappedPos.x - lockedPos.x;
@@ -535,9 +563,9 @@ function normaliseCursorCoordinates(event, rect)
 // (counter-clockwise is default)
 function rotateGrid(cw)
 {
-    currentState = State.Rotating;
     targetAngle = cw ? (angle - pi/3) : (angle + pi/3);
     this.grid.rotate(cw);
+    currentState = State.Rotating;
 }
 
 function removeMatches()
@@ -546,8 +574,8 @@ function removeMatches()
     {
         var hex = matchedHexes[i];
         grid.remove(hex);
-        startTime = Date.now();
     }
+    startTime = Date.now();
     currentState = State.RemovingMatches;
 }
 

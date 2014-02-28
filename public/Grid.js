@@ -93,16 +93,16 @@ function Grid(size, nTypes, colorGenerator) {
 
         for (var r = -size + 1; r <= size - 1; ++r)
         {
-            var c = - q - r;
-            if (abs(c) >= size)
+            var b = - q - r;
+            if (abs(b) >= size)
                 continue;
 
             var center = this.axialToPixel(q,r);
             var type = floor(Math.random() * nTypes);
             column.push({
                 a: q,
-                b: r,
-                c: c,
+                b: b,
+                c: r,
                 type: type,
                 geometry: new Hexagon(center.x, center.y, colorGenerator.getColor(type)),
             });
@@ -128,9 +128,9 @@ Grid.prototype.rotate = function(cw) {
 
 Grid.prototype.swap = function(hex1, hex2) {
     var q1 = hex1.a;
-    var r1 = hex1.b;
+    var r1 = hex1.c;
     var q2 = hex2.a;
-    var r2 = hex2.b;
+    var r2 = hex2.c;
 
     var i1 = q1 + (this.size - 1);
     var j1 = r1 + min(i1, this.size - 1);
@@ -156,7 +156,7 @@ Grid.prototype.swap = function(hex1, hex2) {
 
 Grid.prototype.remove = function(hex) {
     var q = hex.a;
-    var r = hex.b;
+    var r = hex.c;
 
     var i = q + (this.size - 1);
     var j = r + min(i, this.size - 1);
@@ -448,6 +448,41 @@ Grid.prototype.closeGaps = function() {
     return shiftedHexes;
 };
 
+// Traverses the grid and fills all empty cells randomly.
+// Returns a list of all new hexes.
+Grid.prototype.refill = function() {
+    var newHexes = [];
+
+    // TODO: By taking into account the orientation of the grid
+    //       and assuming that only cells at the top are empty, we
+    //       optimize this loop quite a lot.
+    for (var q = -this.size+1; q <= this.size-1; ++q)
+    {
+        for (var r = -this.size+1 - min(0,q); r <= this.size-1 - max(0,q); ++r)
+        {
+            var index = this.axialToIndex(q,r);
+            if (!this.grid[index.i][index.j])
+            {
+                var center = this.axialToPixel(q,r);
+                var type = floor(Math.random() * this.nTypes);
+
+                var hex = {
+                    a: q,
+                    b: -q-r,
+                    c: r,
+                    type: type,
+                    geometry: new Hexagon(center.x, center.y, colorGenerator.getColor(type)),
+                };
+
+                this.grid[index.i][index.j] = hex;
+                newHexes.push(hex);
+            }
+        }
+    }
+
+    return newHexes;
+};
+
 Grid.prototype.axialToPixel = function(q, r) {
     return {
         x: 3/2 * q,
@@ -488,10 +523,10 @@ Grid.prototype.get = function(q, r) {
 
 // Converts axial coordinates into grid-array indices
 Grid.prototype.axialToIndex = function(q, r) {
-    var c = - q - r;
+    var b = - q - r;
     if (abs(q) >= this.size ||
-        abs(r) >= this.size ||
-        abs(c) >= this.size)
+        abs(b) >= this.size ||
+        abs(r) >= this.size)
         return null;
 
     var i = q + (this.size - 1);
