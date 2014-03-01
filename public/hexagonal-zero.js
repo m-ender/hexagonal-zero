@@ -37,7 +37,6 @@ var State = {
     HexUnswap: "HexUnswap",
     RemovingMatches: "RemovingMatches",
     CloseGaps: "CloseGaps",
-    FillGaps: "FillGaps",
 };
 var currentState;
 
@@ -46,7 +45,6 @@ var lockedHex = null;
 var swappedHex = null;
 var matchedHexes = null;
 var shiftedHexes = null;
-var newHexes = null;
 
 var startTime;
 
@@ -214,7 +212,7 @@ function InitShaders(gl, vertexShaderId, fragmentShaderId)
 // This is a fixed-framerate game loop. dT is not constant, though
 function update()
 {
-    var i;
+    var i, j, k;
     var hex;
 
     window.requestAnimFrame(update, canvas);
@@ -306,7 +304,52 @@ function update()
             {
                 matchedHexes = null;
 
-                shiftedHexes = grid.closeGaps();
+                var shiftedHexColumns = grid.closeGaps();
+
+                shiftedHexes = [];
+
+                for (i = 0; i < shiftedHexColumns.length; ++i)
+                    shiftedHexes = shiftedHexes.concat(shiftedHexColumns[i].shiftedHexes);
+
+                // Refers to the coordinate that stays constant along on column
+                // in shiftedHexColumns
+                var constCoord;
+
+                switch (grid.orientation)
+                {
+                case Orientation.PlusA:
+                case Orientation.MinusA:
+                    constCoord = 'a';
+                    break;
+                case Orientation.PlusB:
+                case Orientation.MinusB:
+                    constCoord = 'b';
+                    break;
+                case Orientation.PlusC:
+                case Orientation.MinusC:
+                    constCoord = 'c';
+                    break;
+                }
+
+                var newHexes = grid.refill();
+
+                // Displace new hexes to the top of their columns so they fall down
+                // with the other hexes. This is somehow quite hacky.
+                for (i = 0; i < newHexes.length; ++i)
+                {
+                    hex = newHexes[i];
+                    var column = hex[constCoord] + grid.size-1;
+                    hex.geometry.x += sin(angle) * hexD * shiftedHexColumns[column].missingHexes;
+                    hex.geometry.y += cos(angle) * hexD * shiftedHexColumns[column].missingHexes;
+
+                    // Fill a targetX/targetY variable, which can be
+                    // used to move the geometry to the new position.
+                    var center = grid.axialToPixel(hex.a, hex.c);
+                    hex.targetX = center.x;
+                    hex.targetY = center.y;
+
+                    shiftedHexes.push(hex);
+                }
 
                 currentState = State.CloseGaps;
             }
@@ -342,24 +385,7 @@ function update()
 
             if (shiftedHexes.length === 0)
             {
-                shiftedHexes = null;
-                newHexes = grid.refill();
-                for (i = 0; i < newHexes.length; ++i)
-                    newHexes[i].geometry.resize(0);
-                startTime = currentTime;
-                currentState = State.FillGaps;
-            }
-            break;
-        case State.FillGaps:
-            for (i = 0; i < newHexes.length; ++i)
-            {
-                hex = newHexes[i];
-                hex.geometry.resize(min(1, (currentTime - startTime) / 1000 * growV));
-            }
-            if (hex.geometry.scale === hex.geometry.baseScale)
-            {
-                newHexes = null;
-                matchedHexes = grid.getMatchedHexes();
+                shiftedHexes = null;matchedHexes = grid.getMatchedHexes();
                 if (matchedHexes.length)
                     removeMatches();
                 else

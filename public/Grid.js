@@ -323,9 +323,10 @@ Grid.prototype.getMatchedHexes = function() {
 
 // This fills all existing gaps by moving the above cells down. It does not
 // refill the empty cells that will appear at the top.
-// Returns a list of all hexes that have been moved around.
+// Returns a list of all hexes that have been moved around. The hexes are
+// grouped by columns (in the current orientation).
 Grid.prototype.closeGaps = function() {
-    var shiftedHexes = [];
+    var columns = [];
 
     // We need to iterate over the grid in columns from bottom to top.
     // However, how we assign "columns", "bottom" and "top" to the cubic
@@ -383,6 +384,8 @@ Grid.prototype.closeGaps = function() {
          ++fromPos[p.i])
     {
         toPos[p.i] = fromPos[p.i];
+
+        var shiftedHexes = [];
 
         // Figuring out the bounds is a bit tricky here, depending on which
         // direction we need to walk the column. We could probably do this
@@ -443,9 +446,14 @@ Grid.prototype.closeGaps = function() {
             // incremented while toPos remains the same, hence
             // bridging the gap.
         }
+
+        columns.push( {
+            shiftedHexes: shiftedHexes,
+            missingHexes: abs(fromPos[p.k] - toPos[p.k]),
+        });
     }
 
-    return shiftedHexes;
+    return columns;
 };
 
 // Traverses the grid and fills all empty cells randomly.
