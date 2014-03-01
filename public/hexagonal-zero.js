@@ -13,6 +13,7 @@ var colorGenerator;
 var hexagonProgram = {};
 
 var grid;
+var border;
 
 var resolution = 512; // We're assuming a square aspect ratio
 var viewPort = {};
@@ -120,6 +121,8 @@ function init()
     gl.uniform1f(hexagonProgram.uAngle, angle);
 
     gl.useProgram(null);
+
+    border = new Border(gridSize, hexD, $.Color('#635F56'));
 
     prepareHexagons();
     grid = new Grid(gridSize, nColors, colorGenerator);
@@ -434,6 +437,8 @@ function drawScreen()
             matchedHexes[i].geometry.render(true);
         }
     }
+
+    border.render();
 
     gl.useProgram(null);
 
