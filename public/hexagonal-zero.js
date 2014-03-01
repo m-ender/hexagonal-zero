@@ -455,6 +455,15 @@ function drawScreen()
         lockedHex.geometry.render(true);
     }
 
+    if (matchedHexes)
+    {
+        for (var i = 0; i < matchedHexes.length; ++i)
+        {
+            matchedHexes[i].geometry.render();
+            matchedHexes[i].geometry.render(true);
+        }
+    }
+
     border.render();
 
     gl.useProgram(null);
