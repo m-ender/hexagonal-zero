@@ -129,7 +129,32 @@ function init()
 
     // TODO: Generate a sensible grid (one that doesn't contain matches, but
     // but contains valid moves).
-    matchedHexes = grid.getMatchedHexes();
+
+    var matchedHexes = grid.getMatchedHexes();
+    while(matchedHexes.length)
+    {
+        var i, hex;
+        for (i = 0; i < matchedHexes.length; ++i)
+        {
+            hex = matchedHexes[i];
+            grid.remove(hex);
+        }
+
+        var shiftedHexColumns = grid.closeGaps();
+        for (i = 0; i < shiftedHexColumns.length; ++i)
+        {
+            var column = shiftedHexColumns[i];
+            for (var j = 0; j < column.shiftedHexes.length; ++j)
+            {
+                hex = column.shiftedHexes[j];
+                hex.geometry.x = hex.targetX;
+                hex.geometry.y = hex.targetY;
+            }
+        }
+
+        grid.refill();
+        matchedHexes = grid.getMatchedHexes();
+    }
 
     currentState = State.Idle;
 
@@ -388,7 +413,8 @@ function update()
 
             if (shiftedHexes.length === 0)
             {
-                shiftedHexes = null;matchedHexes = grid.getMatchedHexes();
+                shiftedHexes = null;
+                matchedHexes = grid.getMatchedHexes();
                 if (matchedHexes.length)
                     removeMatches();
                 else
@@ -427,15 +453,6 @@ function drawScreen()
     {
         lockedHex.geometry.render();
         lockedHex.geometry.render(true);
-    }
-
-    if (matchedHexes)
-    {
-        for (var i = 0; i < matchedHexes.length; ++i)
-        {
-            matchedHexes[i].geometry.render();
-            matchedHexes[i].geometry.render(true);
-        }
     }
 
     border.render();
