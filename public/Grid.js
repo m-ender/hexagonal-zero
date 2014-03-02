@@ -104,7 +104,7 @@ function Grid(size, nTypes, colorGenerator) {
                 b: b,
                 c: r,
                 type: type,
-                geometry: new Hexagon(center.x, center.y, colorGenerator.getColor(type)),
+                geometry: new Circle(center.x, center.y, colorGenerator.getColor(type)),
             });
         }
 
@@ -479,7 +479,7 @@ Grid.prototype.refill = function() {
                     b: -q-r,
                     c: r,
                     type: type,
-                    geometry: new Hexagon(center.x, center.y, colorGenerator.getColor(type)),
+                    geometry: new Circle(center.x, center.y, colorGenerator.getColor(type)),
                 };
 
                 this.grid[index.i][index.j] = hex;

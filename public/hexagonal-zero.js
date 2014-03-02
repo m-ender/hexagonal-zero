@@ -124,7 +124,7 @@ function init()
 
     border = new Border(gridSize, hexD, $.Color('#635F56'));
 
-    prepareHexagons();
+    prepareCircles();
     grid = new Grid(gridSize, nColors, colorGenerator);
 
     // TODO: Generate a sensible grid (one that doesn't contain matches, but
