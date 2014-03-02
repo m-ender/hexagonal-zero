@@ -104,15 +104,8 @@ function Grid(size, nColors) {
                 continue;
 
             var color = floor(Math.random() * nColors);
-            var rand = Math.random();
-            if (rand < 0.02)
-                column.push(new RowBomb(q, b, r, color, CubicAxis.A));
-            else if (rand < 0.04)
-                column.push(new RowBomb(q, b, r, color, CubicAxis.B));
-            else if (rand < 0.06)
-                column.push(new RowBomb(q, b, r, color, CubicAxis.C));
-            else
-                column.push(new RegularTile(q, b, r, color));
+
+            column.push(new RegularTile(q, b, r, color));
         }
 
         this.grid.push(column);
@@ -250,19 +243,17 @@ Grid.prototype.hasMatches = function() {
     return false;
 };
 
-// This just returns all hex cells that are part of a match, without any
-// information about which group of cells forms each match.
+// This returns all an array of matches, where each match is just
+// an array of tiles. The array gets one custom property, which is
+// the coordinate that remains constant while traversing the match.
+// Note that overlapping matches will cause one tile to appear in
+// multiple matches.
 Grid.prototype.getMatchedHexes = function() {
     var q, r;
     var lastType, matchLength;
     var hex;
 
-    var matchedHexes = [];
-
-    // Unmark all cells
-    for (var i = 0; i < this.grid.length; ++i)
-        for (var j = 0; j < this.grid[i].length; ++j)
-            this.grid[i][j].marked = false;
+    var matches = [];
 
     // We need this in two places so create an internal helper function.
     // Given permutation p, and row i it iterates over cell range
@@ -270,6 +261,9 @@ Grid.prototype.getMatchedHexes = function() {
     // been saved there before.
     var that = this;
     var collectHexes = function (p, i, k_min, k_max) {
+        var match = [];
+        match.axis = p.i;
+
         var pos = {
             a: null,
             b: null,
@@ -287,17 +281,10 @@ Grid.prototype.getMatchedHexes = function() {
             var r = pos.c;
             var hex = that.get(q,r);
 
-            if (!hex.marked)
-            {
-                matchedHexes.push(hex);
-                hex.marked = true;
-                hex.numMatched = 1;
-            }
-            else
-            {
-                ++hex.numMatched;
-            }
+            match.push(hex);
         }
+
+        matches.push(match);
     };
 
     // We need to iterate over the grid once in each direction.
@@ -354,7 +341,7 @@ Grid.prototype.getMatchedHexes = function() {
         }
     }
 
-    return matchedHexes;
+    return matches;
 };
 
 // This fills all existing gaps by moving the above cells down. It does not

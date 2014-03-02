@@ -131,21 +131,25 @@ function init()
     // but contains valid moves).
 
     var nRefills = 0;
-    var matchedHexes = grid.getMatchedHexes();
-    while(matchedHexes.length)
+    var matches = grid.getMatchedHexes();
+    while(matches.length)
     {
-        var i, hex;
-        for (i = 0; i < matchedHexes.length; ++i)
+        var i, j, hex;
+
+        for (i = 0; i < matches.length; ++i)
         {
-            hex = matchedHexes[i];
-            grid.remove(hex);
+            for (j = 0; j < matches[i].length; ++j)
+            {
+                hex = matches[i][j];
+                grid.remove(hex);
+            }
         }
 
         var shiftedHexColumns = grid.closeGaps();
         for (i = 0; i < shiftedHexColumns.length; ++i)
         {
             var column = shiftedHexColumns[i];
-            for (var j = 0; j < column.shiftedHexes.length; ++j)
+            for (j = 0; j < column.shiftedHexes.length; ++j)
             {
                 hex = column.shiftedHexes[j];
                 hex.geometry.x = hex.targetX;
@@ -155,7 +159,7 @@ function init()
 
         ++nRefills;
         grid.refill();
-        matchedHexes = grid.getMatchedHexes();
+        matches = grid.getMatchedHexes();
     }
     console.log('Needed to remove matches ' + nRefills + ' time' + (nRefills === 1 ? '' : 's'));
 
@@ -244,7 +248,7 @@ function InitShaders(gl, vertexShaderId, fragmentShaderId)
 function update()
 {
     var i, j, k;
-    var hex;
+    var hex, matches;
 
     window.requestAnimFrame(update, canvas);
 
@@ -296,12 +300,12 @@ function update()
             if (currentT === hexD)
             {
                 grid.swap(lockedHex, swappedHex);
-                matchedHexes = grid.getMatchedHexes();
-                if (matchedHexes.length)
+                matches = grid.getMatchedHexes();
+                if (matches.length)
                 {
+                    removeMatches(matches);
                     lockedHex = null;
                     swappedHex = null;
-                    removeMatches();
                 }
                 else
                 {
@@ -326,7 +330,6 @@ function update()
             {
                 lockedHex = null;
                 swappedHex = null;
-                matchedHexes = grid.getMatchedHexes();
                 currentState = State.Idle;
             }
             break;
@@ -435,9 +438,9 @@ function update()
             if (shiftedHexes.length === 0)
             {
                 shiftedHexes = null;
-                matchedHexes = grid.getMatchedHexes();
-                if (matchedHexes.length)
-                    removeMatches();
+                matches = grid.getMatchedHexes();
+                if (matches.length)
+                    removeMatches(matches);
                 else
                     rotateGrid(clockwiseRotation);
             }
@@ -646,29 +649,79 @@ function rotateGrid(cw)
     currentState = State.Rotating;
 }
 
-function removeMatches()
+function removeMatches(matches)
 {
     var neighbors = [
        [+1,  0], [+1, -1], [ 0, -1],
        [-1,  0], [-1, +1], [ 0, +1]
     ];
 
-    var i, j, d, hex;
+    var i, j, k, d, hex;
 
-    // Expand match around bombs.
-    // Note, we are modifying the list while iterating over it. However,
-    // we only append to the end, which is fine in this case.
-    for (i = 0; i < matchedHexes.length; ++i)
+    matchedHexes = [];
+    bombedHexes = [];
+
+    // Process matches
+    for (i = 0; i < matches.length; ++i)
     {
-        hex = matchedHexes[i];
+        var match = matches[i];
+        if (match.length > 3)
+        {
+            var index;
+            if ((index = match.indexOf(swappedHex)) > -1)
+            {
+                hex = swappedHex;
+            }
+            else if ((index = match.indexOf(lockedHex)) > -1)
+            {
+                hex = lockedHex;
+            }
+            else
+            {
+                // Take the third hex
+                index = 2;
+                hex = match[2];
+            }
+
+            match.splice(index,1);
+            grid.changeType(hex, RowBomb, match.axis);
+        }
+
+        for (j = 0; j < match.length; ++j)
+        {
+            hex = match[j];
+
+            if (matchedHexes.indexOf(hex) === -1)
+            {
+                hex.matchCount = 1;
+                matchedHexes.push(hex);
+            }
+            else
+                ++hex.matchCount;
+
+            // Collect bombs to process separately
+            if (hex instanceof HexBomb ||
+                hex instanceof RowBomb)
+                bombedHexes.push(hex);
+        }
+    }
+
+    // Process bombs. We're adding new elements to the array while walking
+    // over it, which is a bit evil but works.
+    for (i = 0; i < bombedHexes.length; ++i)
+    {
+        hex = bombedHexes[i];
+        if (matchedHexes.indexOf(hex) === -1)
+            matchedHexes.push(hex);
+
         if (hex instanceof HexBomb)
         {
-            for (j = 0; j < 6; ++j)
+            for (k = 0; k < 6; ++k)
             {
-                d = neighbors[j];
+                d = neighbors[k];
                 var neighbor = grid.get(hex.a + d[0], hex.c + d[1]);
-                if (neighbor && matchedHexes.indexOf(neighbor) === -1)
-                    matchedHexes.push(neighbor);
+                if (neighbor && bombedHexes.indexOf(neighbor) === -1)
+                    bombedHexes.push(neighbor);
             }
         }
         else if (hex instanceof RowBomb)
@@ -702,11 +755,12 @@ function removeMatches()
                 var r = pos.c;
 
                 hex = grid.get(q,r);
-                if (matchedHexes.indexOf(hex) === -1)
-                    matchedHexes.push(hex);
+                if (bombedHexes.indexOf(hex) === -1)
+                    bombedHexes.push(hex);
             }
         }
     }
+
 
     // We're modifying the array again, this time we're removing tiles that
     // should not be removed but converted. Therefore we walk the array
@@ -714,7 +768,7 @@ function removeMatches()
     for (i = matchedHexes.length-1; i >= 0; --i)
     {
         hex = matchedHexes[i];
-        if (hex.numMatched > 1)
+        if (hex.matchCount > 1)
         {
             grid.changeType(hex, HexBomb);
             matchedHexes.splice(i,1);
