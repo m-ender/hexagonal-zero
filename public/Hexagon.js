@@ -36,6 +36,8 @@ function Hexagon(x, y, color, scale)
 
     this.scale = scale || defaultScale;
     this.baseScale = this.scale;
+
+    this.angle = 0;
 }
 
 // Convenient setters
@@ -51,6 +53,10 @@ Hexagon.prototype.resize = function(scale) {
     this.scale = this.baseScale * scale;
 };
 
+Hexagon.prototype.rotate = function(dAngle) {
+    this.angle += dAngle;
+};
+
 Hexagon.prototype.hide = function() { this.hidden = true; };
 Hexagon.prototype.show = function() { this.hidden = false; };
 
@@ -63,6 +69,7 @@ Hexagon.prototype.render = function(outline) {
 
     gl.uniform2f(hexagonProgram.uCenter, this.x, this.y);
     gl.uniform1f(hexagonProgram.uScale, this.scale);
+    gl.uniform1f(hexagonProgram.uAngle, this.angle);
 
     gl.enableVertexAttribArray(hexagonProgram.aPos);
     gl.bindBuffer(gl.ARRAY_BUFFER, hexagonVertices.bufferId);

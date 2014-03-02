@@ -16,10 +16,10 @@ var hexSize = 1;
 var hexD = hexSize * sqrt(3);
 
 // How large should hexes be by default
-var defaultScale = 0.9;//0.72;
+var defaultScale = 0.72;//0.72;
 // How much should the scale oscillate when the hex is selected. The amplitude
 // is relative to the hex's base size.
-var scaleAmplitude = 0.1;//0.28;
+var scaleAmplitude = 0.28;//0.28;
 var scalePeriod = 1; // in seconds
 
 // How fast do hexes shrink when dissolving? Given in hexSize per second

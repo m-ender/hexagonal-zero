@@ -65,3 +65,6 @@ ColorGenerator.prototype.correctHue = function(hue) {
         ly = pair[1];
     }
 };
+
+
+var colorGenerator = new ColorGenerator(nColors);

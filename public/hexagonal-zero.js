@@ -7,8 +7,6 @@ var resultBox;
 
 var gl;
 
-var colorGenerator;
-
 // Objects holding data for individual shader programs
 var hexagonProgram = {};
 
@@ -100,32 +98,33 @@ function init()
     if (!debug)
         renderMenu();
 
-    colorGenerator = new ColorGenerator(nColors);
-
     gl.clearColor(1, 1, 1, 1);
 
     // Load shaders and get uniform locations
     hexagonProgram.program = InitShaders(gl, "hexagon-vertex-shader", "minimal-fragment-shader");
     // add uniform locations
     hexagonProgram.uRenderScale = gl.getUniformLocation(hexagonProgram.program, "uRenderScale");
-    hexagonProgram.uAngle = gl.getUniformLocation(hexagonProgram.program, "uAngle");
+    hexagonProgram.uGridAngle = gl.getUniformLocation(hexagonProgram.program, "uGridAngle");
     hexagonProgram.uCenter = gl.getUniformLocation(hexagonProgram.program, "uCenter");
     hexagonProgram.uColor = gl.getUniformLocation(hexagonProgram.program, "uColor");
     hexagonProgram.uScale = gl.getUniformLocation(hexagonProgram.program, "uScale");
+    hexagonProgram.uAngle = gl.getUniformLocation(hexagonProgram.program, "uAngle");
     // add attribute locations
     hexagonProgram.aPos = gl.getAttribLocation(hexagonProgram.program, "aPos");
 
     // fill uniforms that are already known
     gl.useProgram(hexagonProgram.program);
     gl.uniform1f(hexagonProgram.uRenderScale, renderScale);
-    gl.uniform1f(hexagonProgram.uAngle, angle);
+    gl.uniform1f(hexagonProgram.uGridAngle, angle);
 
     gl.useProgram(null);
 
     border = new Border(gridSize, hexD, $.Color('#635F56'));
 
+    prepareHexagons();
     prepareCircles();
-    grid = new Grid(gridSize, nColors, colorGenerator);
+
+    grid = new Grid(gridSize, nColors);
 
     // TODO: Generate a sensible grid (one that doesn't contain matches, but
     // but contains valid moves).
@@ -257,6 +256,11 @@ function update()
 
         dTime = steps * interval / 1000; // Now dTime is in seconds
 
+        for (i = 0; i < grid.bombs.length; ++i)
+        {
+            grid.bombs[i].geometry.rotate(dTime * omega);
+        }
+
         var direction;
         switch (currentState)
         {
@@ -372,7 +376,7 @@ function update()
 
                     // Fill a targetX/targetY variable, which can be
                     // used to move the geometry to the new position.
-                    var center = grid.axialToPixel(hex.a, hex.c);
+                    var center = axialToPixel(hex.a, hex.c);
                     hex.targetX = center.x;
                     hex.targetY = center.y;
 
@@ -435,7 +439,7 @@ function drawScreen()
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     gl.useProgram(hexagonProgram.program);
-    gl.uniform1f(hexagonProgram.uAngle, angle);
+    gl.uniform1f(hexagonProgram.uGridAngle, angle);
 
     grid.render();
 
@@ -481,7 +485,7 @@ function handleMouseMove(event) {
         debugBox.find('#ycoord').html(coords.y);
     }
 
-    var axial = grid.pixelToAxial(coords.x, coords.y);
+    var axial = pixelToAxial(coords.x, coords.y);
     var hex = grid.get(axial.q, axial.r);
     switch(currentState)
     {
@@ -496,7 +500,7 @@ function handleMouseMove(event) {
         }
         break;
     case State.HexSelected:
-        if (hex && grid.manhattanDistance(hex, lockedHex) === 1)
+        if (hex && manhattanDistance(hex, lockedHex) === 1)
         {
             highlightedHex = hex;
             if (debug)
@@ -527,7 +531,7 @@ function handleMouseDown(event) {
         debugBox.find('#ydown').html(coords.y);
     }
 
-    var axial = grid.pixelToAxial(coords.x, coords.y);
+    var axial = pixelToAxial(coords.x, coords.y);
     var hex = grid.get(axial.q, axial.r);
 
     if (!hex)
@@ -541,7 +545,7 @@ function handleMouseDown(event) {
         currentState = State.HexSelected;
         break;
     case State.HexSelected:
-        if (grid.manhattanDistance(hex, lockedHex) === 1)
+        if (manhattanDistance(hex, lockedHex) === 1)
         {
             lockedHex.geometry.resize();
 
@@ -627,9 +631,34 @@ function rotateGrid(cw)
 
 function removeMatches()
 {
-    for (var i = 0; i < matchedHexes.length; ++i)
+    var neighbors = [
+       [+1,  0], [+1, -1], [ 0, -1],
+       [-1,  0], [-1, +1], [ 0, +1]
+    ];
+
+    var i, j, d, hex;
+
+    // Expand match around bombs.
+    // Note, we are modifying the list while iterating over it. However,
+    // we only append to the end, which is fine in this case.
+    for (i = 0; i < matchedHexes.length; ++i)
     {
-        var hex = matchedHexes[i];
+        hex = matchedHexes[i];
+        if (hex instanceof HexBomb)
+        {
+            for (j = 0; j < 6; ++j)
+            {
+                d = neighbors[j];
+                var neighbor = grid.get(hex.a + d[0], hex.c + d[1]);
+                if (neighbor && matchedHexes.indexOf(neighbor) === -1)
+                    matchedHexes.push(neighbor);
+            }
+        }
+    }
+
+    for (i = 0; i < matchedHexes.length; ++i)
+    {
+        hex = matchedHexes[i];
         grid.remove(hex);
     }
     startTime = Date.now();

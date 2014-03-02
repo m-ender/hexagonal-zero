@@ -66,6 +66,7 @@ Circle.prototype.render = function(outline) {
 
     gl.uniform2f(hexagonProgram.uCenter, this.x, this.y);
     gl.uniform1f(hexagonProgram.uScale, this.scale);
+    gl.uniform1f(hexagonProgram.uAngle, 0);
 
     gl.enableVertexAttribArray(hexagonProgram.aPos);
     gl.bindBuffer(gl.ARRAY_BUFFER, circleVertices.bufferId);

@@ -79,13 +79,13 @@ var Orientation = {
     MinusC: 5,
 };
 
-
 // Size is the number of hexagonal rings in the grid (including the center)
-function Grid(size, nTypes, colorGenerator) {
+function Grid(size, nColors) {
     this.size = size;
-    this.nTypes = nTypes;
+    this.nColors = nColors;
 
     this.grid = [];
+    this.bombs = [];
 
     for (var q = -size + 1; q <= size - 1; ++q)
     {
@@ -97,15 +97,15 @@ function Grid(size, nTypes, colorGenerator) {
             if (abs(b) >= size)
                 continue;
 
-            var center = this.axialToPixel(q,r);
-            var type = floor(Math.random() * nTypes);
-            column.push({
-                a: q,
-                b: b,
-                c: r,
-                type: type,
-                geometry: new Circle(center.x, center.y, colorGenerator.getColor(type)),
-            });
+            var color = floor(Math.random() * nColors);
+            if (Math.random() < 0.05)
+            {
+                var bomb = new HexBomb(q, b, r, color);
+                column.push(bomb);
+                this.bombs.push(bomb);
+            }
+            else
+                column.push(new RegularTile(q, b, r, color));
         }
 
         this.grid.push(column);
@@ -162,6 +162,13 @@ Grid.prototype.remove = function(hex) {
     var j = r + min(i, this.size - 1);
 
     delete this.grid[i][j];
+
+    if (hex instanceof HexBomb)
+    {
+        var index = this.bombs.indexOf(hex);
+        this.bombs.splice(index,1);
+    }
+
 };
 
 Grid.prototype.hasMatches = function() {
@@ -203,14 +210,14 @@ Grid.prototype.hasMatches = function() {
 
                 if (!hex) continue;
 
-                if (hex.type === lastType)
+                if (hex.color === lastType)
                 {
                     if (++matchLength >= 3) return true;
                 }
                 else
                 {
                     matchLength = 1;
-                    lastType = hex.type;
+                    lastType = hex.color;
                 }
             }
         }
@@ -299,7 +306,7 @@ Grid.prototype.getMatchedHexes = function() {
 
                 if (!hex) continue;
 
-                if (hex.type === lastType)
+                if (hex.color === lastType)
                 {
                     ++matchLength;
                 }
@@ -309,7 +316,7 @@ Grid.prototype.getMatchedHexes = function() {
                         collectHexes(p, pos[p.i], pos[p.k] - matchLength, pos[p.k] - 1);
 
                     matchLength = 1;
-                    lastType = hex.type;
+                    lastType = hex.color;
                 }
             }
 
@@ -433,7 +440,7 @@ Grid.prototype.closeGaps = function() {
 
                     // Fill a targetX/targetY variable, which can be
                     // used to move the geometry to the new position.
-                    var center = this.axialToPixel(toQ, toR);
+                    var center = axialToPixel(toQ, toR);
                     hex.targetX = center.x;
                     hex.targetY = center.y;
 
@@ -471,16 +478,8 @@ Grid.prototype.refill = function() {
             var index = this.axialToIndex(q,r);
             if (!this.grid[index.i][index.j])
             {
-                var center = this.axialToPixel(q,r);
-                var type = floor(Math.random() * this.nTypes);
-
-                var hex = {
-                    a: q,
-                    b: -q-r,
-                    c: r,
-                    type: type,
-                    geometry: new Circle(center.x, center.y, colorGenerator.getColor(type)),
-                };
+                var color = floor(Math.random() * this.nColors);
+                var hex = new RegularTile(q, -q-r, r, color);
 
                 this.grid[index.i][index.j] = hex;
                 newHexes.push(hex);
@@ -489,37 +488,6 @@ Grid.prototype.refill = function() {
     }
 
     return newHexes;
-};
-
-Grid.prototype.axialToPixel = function(q, r) {
-    return {
-        x: 3/2 * q,
-        y: -sqrt(3) * (q/2 + r),
-    };
-};
-
-Grid.prototype.pixelToAxial = function(x, y) {
-    var a = 2/3 * x;
-    var b = (- sqrt(3)*y - x)/3;
-    var c = - a - b;
-
-    var ra = round(a);
-    var rb = round(b);
-    var rc = round(c);
-
-    var da = abs(a - ra);
-    var db = abs(b - rb);
-    var dc = abs(c - rc);
-
-    if (da > db && da > dc)
-        ra = -rb-rc;
-    else if (db > dc)
-        rb = -ra-rc;
-
-    return {
-        q: ra,
-        r: rb,
-    };
 };
 
 // Returns a hex given axial coordinates
@@ -545,12 +513,6 @@ Grid.prototype.axialToIndex = function(q, r) {
     };
 };
 
-Grid.prototype.manhattanDistance = function(hex1, hex2) {
-    return max(abs(hex1.a - hex2.a),
-               abs(hex1.b - hex2.b),
-               abs(hex1.c - hex2.c));
-};
-
 Grid.prototype.render = function() {
     for (var i = 0; i < this.grid.length; ++i)
     {
@@ -562,3 +524,43 @@ Grid.prototype.render = function() {
         }
     }
 };
+
+// Convenient global functions for converting between coordinate
+// systems and doing some common calculations.
+
+function axialToPixel(q, r) {
+    return {
+        x: 3/2 * q,
+        y: -sqrt(3) * (q/2 + r),
+    };
+}
+
+function pixelToAxial(x, y) {
+    var a = 2/3 * x;
+    var b = (- sqrt(3)*y - x)/3;
+    var c = - a - b;
+
+    var ra = round(a);
+    var rb = round(b);
+    var rc = round(c);
+
+    var da = abs(a - ra);
+    var db = abs(b - rb);
+    var dc = abs(c - rc);
+
+    if (da > db && da > dc)
+        ra = -rb-rc;
+    else if (db > dc)
+        rb = -ra-rc;
+
+    return {
+        q: ra,
+        r: rb,
+    };
+}
+
+function manhattanDistance(hex1, hex2) {
+    return max(abs(hex1.a - hex2.a),
+               abs(hex1.b - hex2.b),
+               abs(hex1.c - hex2.c));
+}

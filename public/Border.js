@@ -33,6 +33,7 @@ Border.prototype.render = function() {
 
     gl.uniform2f(hexagonProgram.uCenter, 0, 0);
     gl.uniform1f(hexagonProgram.uScale, 1);
+    gl.uniform1f(hexagonProgram.uAngle, 0);
 
     gl.enableVertexAttribArray(hexagonProgram.aPos);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vertices.bufferId);

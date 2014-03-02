@@ -16,6 +16,7 @@
     <script type="text/javascript" src="Border.js"></script>
     <script type="text/javascript" src="Hexagon.js"></script>
     <script type="text/javascript" src="Circle.js"></script>
+    <script type="text/javascript" src="Tile.js"></script>
     <script type="text/javascript" src="Grid.js"></script>
     <script type="text/javascript" src="hexagonal-zero.js"></script>
 
@@ -28,10 +29,11 @@
 
         uniform float uRenderScale;
         // This is the angle by which the entire view port is rotated
-        uniform float uAngle;
+        uniform float uGridAngle;
 
         uniform vec2 uCenter;
         uniform float uScale; // scale of this particular hex
+        uniform float uAngle; // rotation angle of this partcular hex
         uniform vec4 uColor;
 
         attribute vec4 aPos;
@@ -42,13 +44,16 @@
         {
             vColor = uColor;
 
-            float x = uRenderScale * (uCenter.x + uScale * aPos.x);
-            float y = uRenderScale * (uCenter.y + uScale * aPos.y);
+            float x = aPos.x * cos(uAngle) - aPos.y * sin(uAngle);
+            float y = aPos.x * sin(uAngle) + aPos.y * cos(uAngle);
+
+            x = uRenderScale * (uCenter.x + uScale * x);
+            y = uRenderScale * (uCenter.y + uScale * y);
 
             // The render scale shrinks or grows the viewport and refers to which percentage
             // of the screen will be filled by the [-1, 1] coordinate range.
-            gl_Position = vec4( x * cos(uAngle) - y * sin(uAngle),
-                                x * sin(uAngle) + y * cos(uAngle),
+            gl_Position = vec4( x * cos(uGridAngle) - y * sin(uGridAngle),
+                                x * sin(uGridAngle) + y * cos(uGridAngle),
                                0,
                                aPos.w);
         }
