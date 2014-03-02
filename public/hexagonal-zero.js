@@ -330,7 +330,19 @@ function update()
             for (i = 0; i < matchedHexes.length; ++i)
             {
                 hex = matchedHexes[i];
-                hex.geometry.resize(1 - (currentTime - startTime) / 1000 * dissolveV);
+
+                if (hex instanceof RegularTile)
+                    hex.geometry.resize(1 - (currentTime - startTime) / 1000 * dissolveV);
+                else if (hex instanceof HexBomb)
+                {
+                    // This is a parameterisation which satisfies:
+                    // f(t=0) = 1
+                    // f(t=1) = 1
+                    // f_max = hexBombExpR
+                    var b = 2 - 2*hexBombExpR - 2*sqrt(hexBombExpR*(hexBombExpR-1));
+                    var t = (currentTime - startTime) / 1000 * dissolveV;
+                    hex.geometry.resize(1 - b*t + (b-1)*t*t);
+                }
             }
             if (hex.geometry.scale < 0)
             {

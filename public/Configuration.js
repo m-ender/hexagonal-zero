@@ -25,6 +25,9 @@ var scalePeriod = 1; // in seconds
 // How fast do hexes shrink when dissolving? Given in hexSize per second
 var dissolveV = 2.5;
 
+// How big should hex bombs grow when exploding
+var hexBombExpR = hexD*1.5;
+
 // How fast do hexes fall to fill gaps?
 var fallingV = 5*hexD;
 
