@@ -79,13 +79,19 @@ var Orientation = {
     MinusC: 5,
 };
 
+var CubicAxis = {
+    A: 'a',
+    B: 'b',
+    C: 'c',
+};
+
 // Size is the number of hexagonal rings in the grid (including the center)
 function Grid(size, nColors) {
     this.size = size;
     this.nColors = nColors;
 
     this.grid = [];
-    this.bombs = [];
+    this.hexBombs = [];
 
     for (var q = -size + 1; q <= size - 1; ++q)
     {
@@ -98,7 +104,15 @@ function Grid(size, nColors) {
                 continue;
 
             var color = floor(Math.random() * nColors);
-            column.push(new RegularTile(q, b, r, color));
+            var rand = Math.random();
+            if (rand < 0.02)
+                column.push(new RowBomb(q, b, r, color, CubicAxis.A));
+            else if (rand < 0.04)
+                column.push(new RowBomb(q, b, r, color, CubicAxis.B));
+            else if (rand < 0.06)
+                column.push(new RowBomb(q, b, r, color, CubicAxis.C));
+            else
+                column.push(new RegularTile(q, b, r, color));
         }
 
         this.grid.push(column);
@@ -157,8 +171,8 @@ Grid.prototype.remove = function(hex) {
 
     if (hex instanceof HexBomb)
     {
-        var i = this.bombs.indexOf(hex);
-        this.bombs.splice(i,1);
+        var i = this.hexBombs.indexOf(hex);
+        this.hexBombs.splice(i,1);
     }
 };
 
@@ -166,8 +180,8 @@ Grid.prototype.remove = function(hex) {
 Grid.prototype.changeType = function(hex, type) {
     if (hex instanceof HexBomb)
     {
-        var i = this.bombs.indexOf(hex);
-        this.bombs.splice(i,1);
+        var i = this.hexBombs.indexOf(hex);
+        this.hexBombs.splice(i,1);
     }
 
     var q = hex.a;
@@ -175,10 +189,10 @@ Grid.prototype.changeType = function(hex, type) {
 
     var index = this.axialToIndex(q,r);
 
-    var tile = new type(hex.a, hex.b, hex.c, hex.color);
+    var tile = new type(hex.a, hex.b, hex.c, hex.color, arguments[2]);
     this.grid[index.i][index.j] = tile;
     if (type === HexBomb)
-        this.bombs.push(tile);
+        this.hexBombs.push(tile);
 };
 
 Grid.prototype.hasMatches = function() {

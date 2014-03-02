@@ -122,6 +122,7 @@ function init()
     border = new Border(gridSize, hexD, $.Color('#635F56'));
 
     prepareHexagons();
+    prepareStripedHexagons();
     prepareCircles();
 
     grid = new Grid(gridSize, nColors);
@@ -129,6 +130,7 @@ function init()
     // TODO: Generate a sensible grid (one that doesn't contain matches, but
     // but contains valid moves).
 
+    var nRefills = 0;
     var matchedHexes = grid.getMatchedHexes();
     while(matchedHexes.length)
     {
@@ -151,9 +153,11 @@ function init()
             }
         }
 
+        ++nRefills;
         grid.refill();
         matchedHexes = grid.getMatchedHexes();
     }
+    console.log('Needed to remove matches ' + nRefills + ' time' + (nRefills === 1 ? '' : 's'));
 
     currentState = State.Idle;
 
@@ -256,9 +260,9 @@ function update()
 
         dTime = steps * interval / 1000; // Now dTime is in seconds
 
-        for (i = 0; i < grid.bombs.length; ++i)
+        for (i = 0; i < grid.hexBombs.length; ++i)
         {
-            grid.bombs[i].geometry.rotate(dTime * omega);
+            grid.hexBombs[i].geometry.rotate(dTime * omega);
         }
 
         var direction;
@@ -331,7 +335,8 @@ function update()
             {
                 hex = matchedHexes[i];
 
-                if (hex instanceof RegularTile)
+                if (hex instanceof RegularTile ||
+                    hex instanceof RowBomb)
                     hex.geometry.resize(1 - (currentTime - startTime) / 1000 * dissolveV);
                 else if (hex instanceof HexBomb)
                 {
@@ -664,6 +669,41 @@ function removeMatches()
                 var neighbor = grid.get(hex.a + d[0], hex.c + d[1]);
                 if (neighbor && matchedHexes.indexOf(neighbor) === -1)
                     matchedHexes.push(neighbor);
+            }
+        }
+        else if (hex instanceof RowBomb)
+        {
+            var p;
+            switch (hex.axis)
+            {
+            case CubicAxis.A:
+                p = { i: 'a', j: 'b', k: 'c' };
+                break;
+            case CubicAxis.B:
+                p = { i: 'b', j: 'c', k: 'a' };
+                break;
+            case CubicAxis.C:
+                p = { i: 'c', j: 'a', k: 'b' };
+                break;
+            }
+
+            var pos = {
+                a: hex.a,
+                b: hex.b,
+                c: hex.c,
+            };
+
+            for (pos[p.k] = -gridSize+1 - min(0,pos[p.i]);
+                 pos[p.k] <= gridSize-1 - max(0,pos[p.i]);
+                 ++pos[p.k])
+            {
+                pos[p.j] = -pos[p.i]-pos[p.k];
+                var q = pos.a;
+                var r = pos.c;
+
+                hex = grid.get(q,r);
+                if (matchedHexes.indexOf(hex) === -1)
+                    matchedHexes.push(hex);
             }
         }
     }
