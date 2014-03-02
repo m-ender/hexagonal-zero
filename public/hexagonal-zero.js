@@ -668,10 +668,19 @@ function removeMatches()
         }
     }
 
-    for (i = 0; i < matchedHexes.length; ++i)
+    // We're modifying the array again, this time we're removing tiles that
+    // should not be removed but converted. Therefore we walk the array
+    // backwards.
+    for (i = matchedHexes.length-1; i >= 0; --i)
     {
         hex = matchedHexes[i];
-        grid.remove(hex);
+        if (hex.numMatched > 1)
+        {
+            grid.changeType(hex, HexBomb);
+            matchedHexes.splice(i,1);
+        }
+        else
+            grid.remove(hex);
     }
     startTime = Date.now();
     currentState = State.RemovingMatches;

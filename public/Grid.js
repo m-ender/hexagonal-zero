@@ -98,14 +98,7 @@ function Grid(size, nColors) {
                 continue;
 
             var color = floor(Math.random() * nColors);
-            if (Math.random() < 0.05)
-            {
-                var bomb = new HexBomb(q, b, r, color);
-                column.push(bomb);
-                this.bombs.push(bomb);
-            }
-            else
-                column.push(new RegularTile(q, b, r, color));
+            column.push(new RegularTile(q, b, r, color));
         }
 
         this.grid.push(column);
@@ -158,17 +151,34 @@ Grid.prototype.remove = function(hex) {
     var q = hex.a;
     var r = hex.c;
 
-    var i = q + (this.size - 1);
-    var j = r + min(i, this.size - 1);
+    var index = this.axialToIndex(q,r);
 
-    delete this.grid[i][j];
+    delete this.grid[index.i][index.j];
 
     if (hex instanceof HexBomb)
     {
-        var index = this.bombs.indexOf(hex);
-        this.bombs.splice(index,1);
+        var i = this.bombs.indexOf(hex);
+        this.bombs.splice(i,1);
+    }
+};
+
+// type should be the constructor function
+Grid.prototype.changeType = function(hex, type) {
+    if (hex instanceof HexBomb)
+    {
+        var i = this.bombs.indexOf(hex);
+        this.bombs.splice(i,1);
     }
 
+    var q = hex.a;
+    var r = hex.c;
+
+    var index = this.axialToIndex(q,r);
+
+    var tile = new type(hex.a, hex.b, hex.c, hex.color);
+    this.grid[index.i][index.j] = tile;
+    if (type === HexBomb)
+        this.bombs.push(tile);
 };
 
 Grid.prototype.hasMatches = function() {
@@ -267,6 +277,11 @@ Grid.prototype.getMatchedHexes = function() {
             {
                 matchedHexes.push(hex);
                 hex.marked = true;
+                hex.numMatched = 1;
+            }
+            else
+            {
+                ++hex.numMatched;
             }
         }
     };
