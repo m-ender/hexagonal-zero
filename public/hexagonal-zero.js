@@ -1,4 +1,4 @@
-var debug = true;
+var debug = false;
 
 var canvas;
 var messageBox;
@@ -151,18 +151,18 @@ function init()
 
 function renderInstructions()
 {
-    debugBox.html('Level <span id="level"></span><br>' +
-                  'Score: <span id="score">0</span>%<br>' +
-                  '================================<br><br>' +
-                  'How to play:<br><br>' +
-                  'Match three or more hexagons of the same color. ' +
+    debugBox.html('How to play:<br><br>' +
+                  'Click two adjacent to swap them. Match three or more tiles of the same color. ' +
                   'You know how... you\'ve seen this kind of thing before. ' +
-                  'Oh, it might be that the level rotates. Maybe.');
+                  'Oh, it might be that the level rotates. Maybe.<br><br>' +
+                  '');
 }
 
 function renderMenu()
 {
-    // What menu?
+    messageBox.html('<a id="startNewLevel">Start new level</a>');
+
+    messageBox.find('#startNewLevel').bind('click', initializeLevel);
 }
 
 function renderState()
