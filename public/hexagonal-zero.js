@@ -661,6 +661,9 @@ function removeMatches(matches)
     matchedHexes = [];
     bombedHexes = [];
 
+    changedHexes = [];
+    newHexes = [];
+
     // Process matches
     for (i = 0; i < matches.length; ++i)
     {
@@ -685,23 +688,38 @@ function removeMatches(matches)
 
             match.splice(index,1);
             grid.changeType(hex, RowBomb, match.axis);
+            changedHexes.push(hex);
+            newHexes.push(grid.get(hex.a, hex.c));
+
+            if ((index = matchedHexes.indexOf(hex)) > -1)
+                matchedHexes.splice(index,1);
+
+            // Collect bombs to process separately
+            if ((hex instanceof HexBomb ||
+                hex instanceof RowBomb) &&
+                bombedHexes.indexOf(hex) === -1)
+                bombedHexes.push(hex);
         }
 
         for (j = 0; j < match.length; ++j)
         {
             hex = match[j];
 
-            if (matchedHexes.indexOf(hex) === -1)
+            if (changedHexes.indexOf(hex) === -1)
             {
-                hex.matchCount = 1;
-                matchedHexes.push(hex);
+                if (matchedHexes.indexOf(hex) === -1)
+                {
+                    hex.matchCount = 1;
+                    matchedHexes.push(hex);
+                }
+                else
+                    ++hex.matchCount;
             }
-            else
-                ++hex.matchCount;
 
             // Collect bombs to process separately
-            if (hex instanceof HexBomb ||
-                hex instanceof RowBomb)
+            if ((hex instanceof HexBomb ||
+                hex instanceof RowBomb) &&
+                bombedHexes.indexOf(hex) === -1)
                 bombedHexes.push(hex);
         }
     }
@@ -711,7 +729,11 @@ function removeMatches(matches)
     for (i = 0; i < bombedHexes.length; ++i)
     {
         hex = bombedHexes[i];
-        if (matchedHexes.indexOf(hex) === -1)
+        if (newHexes.indexOf(hex) > -1)
+            continue;
+
+        if (matchedHexes.indexOf(hex) === -1 &&
+            changedHexes.indexOf(hex) === -1)
             matchedHexes.push(hex);
 
         if (hex instanceof HexBomb)

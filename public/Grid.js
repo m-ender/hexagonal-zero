@@ -188,6 +188,25 @@ Grid.prototype.changeType = function(hex, type) {
         this.hexBombs.push(tile);
 };
 
+Grid.prototype.changeColor = function(hex, color) {
+    if (hex instanceof HexBomb)
+    {
+        var i = this.hexBombs.indexOf(hex);
+        this.hexBombs.splice(i,1);
+    }
+
+    var q = hex.a;
+    var r = hex.c;
+
+    var index = this.axialToIndex(q,r);
+    var type = hex.constructor;
+
+    var tile = new type(hex.a, hex.b, hex.c, color, hex.axis);
+    this.grid[index.i][index.j] = tile;
+    if (type === HexBomb)
+        this.hexBombs.push(tile);
+};
+
 Grid.prototype.hasMatches = function() {
     var q, r;
     var lastType, matchLength;
