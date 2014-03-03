@@ -840,7 +840,8 @@ function removeMatches(matches)
     for (i = 0; i < bombedHexes.length; ++i)
     {
         hex = bombedHexes[i];
-        if (newHexes.indexOf(hex) > -1)
+        if (newHexes.indexOf(hex) > -1 ||
+            hex instanceof ColorBomb)
             continue;
 
         if (matchedHexes.indexOf(hex) === -1 &&
@@ -906,7 +907,6 @@ function removeMatches(matches)
             grid.changeType(hex, HexBomb);
             newHexes.push(grid.get(hex.a, hex.c));
             matchedHexes.splice(i,1);
-
         }
         else
             grid.remove(hex);
