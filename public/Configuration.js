@@ -32,7 +32,9 @@ var hexBombExpR = hexD*1.5;
 var fallingV = 5*hexD;
 
 // Angular velocity of the grid. Given in radians per second
-var omega = 2*pi/3;
+var omega = pi/3;
+// Angular velocity of bombs.
+var bombOmega = 2*pi/3;
 
 // Speed of hexes during a swap
 var swapV = 3*hexD;

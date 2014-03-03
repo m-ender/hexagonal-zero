@@ -266,11 +266,11 @@ function update()
 
         for (i = 0; i < grid.hexBombs.length; ++i)
         {
-            grid.hexBombs[i].geometry.rotate(dTime * omega);
+            grid.hexBombs[i].geometry.rotate(dTime * bombOmega);
         }
         for (i = 0; i < grid.colorBombs.length; ++i)
         {
-            grid.colorBombs[i].geometry.rotate(dTime * omega);
+            grid.colorBombs[i].geometry.rotate(dTime * bombOmega);
         }
 
         var direction;
