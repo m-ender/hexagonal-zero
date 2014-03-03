@@ -713,10 +713,14 @@ function removeMatches(matches)
                 hex = match[2];
             }
 
-            match.splice(index,1);
-            grid.changeType(hex, RowBomb, match.axis);
+            if (match.length > 4)
+                grid.changeType(hex, ColorBomb, match.axis);
+            else
+                grid.changeType(hex, RowBomb, match.axis);
+
             changedHexes.push(hex);
             newHexes.push(grid.get(hex.a, hex.c));
+            match.splice(index,1);
 
             if ((index = matchedHexes.indexOf(hex)) > -1)
                 matchedHexes.splice(index,1);

@@ -106,14 +106,7 @@ function Grid(size, nColors) {
 
             var color = floor(Math.random() * nColors);
 
-            if (Math.random() < 0.05)
-            {
-                var bomb = new ColorBomb(q, b, r);
-                column.push(bomb);
-                this.colorBombs.push(bomb);
-            }
-            else
-                column.push(new RegularTile(q, b, r, color));
+            column.push(new RegularTile(q, b, r, color));
         }
 
         this.grid.push(column);
