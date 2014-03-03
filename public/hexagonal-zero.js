@@ -155,7 +155,8 @@ function renderInstructions()
                   'Click two adjacent to swap them. Match three or more tiles of the same color. ' +
                   'You know how... you\'ve seen this kind of thing before. ' +
                   'Oh, it might be that the level rotates. Maybe.<br><br>' +
-                  '');
+                  'There are a few different types of special bombs. ' +
+                  'Experiment with different matches to find out how to obtain them and how they work.');
 }
 
 function renderMenu()
