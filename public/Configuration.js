@@ -40,3 +40,19 @@ var bombOmega = 2*pi/3;
 
 // Speed of hexes during a swap
 var swapV = 3*hexD;
+
+/** Resources & Scoring **/
+
+// Number of moves to start with
+var nMoves = 30;
+
+// Score for eliminating a single tile
+var baseScore = 1;
+
+// Scores for creating bombs (in multiples of base score)
+var newHexBombScore = 3;
+var newRowBombScore = 5;
+var newColorBombScore = 10;
+
+// Seconds to display the final score
+var gameOverDuration = 3;

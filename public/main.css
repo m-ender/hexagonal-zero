@@ -85,13 +85,62 @@ body {
   padding-right: 10px;
 }
 
+#score-div {
+    position: absolute;
+    left: 400px;
+    top: 100px;
+    width: 502px;
+    font-size: 30pt;
+    font-weight: bold;
+    font-family: Consolas;
+    text-align: right;
+    color: white;
+}
+
+#moves-div {
+    position: absolute;
+    left: 410px;
+    top: 105px;
+    width: 512px;
+    font-size: 18pt;
+    font-weight: bold;
+    font-family: Consolas;
+    text-align: left;
+    color: white;
+}
+
+#score-div {
+    position: absolute;
+    left: 400px;
+    top: 100px;
+    width: 502px;
+    font-size: 30pt;
+    font-weight: bold;
+    font-family: Consolas;
+    text-align: right;
+    color: white;
+}
+
+#combo-div {
+    position: absolute;
+    left: 400px;
+    top: 140px;
+    width: 502px;
+    font-size: 18pt;
+    font-weight: bold;
+    font-family: Consolas;
+    text-align: right;
+    color: white;
+}
+
+
 #result-div {
     position: absolute;
     left: 400px;
     top: 100px;
     width: 512px;
     height: 512px;
-    font-size: 64pt;
+    font-size: 50pt;
     font-weight: bold;
     font-family: Consolas;
     text-align: center;

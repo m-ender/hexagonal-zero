@@ -3,6 +3,9 @@ var debug = true;
 var canvas;
 var messageBox;
 var debugBox;
+var scoreBox;
+var comboBox;
+var movesBox;
 var resultBox;
 
 var gl;
@@ -23,7 +26,7 @@ var interval = 1000/fps;
 var lastTime;
 
 // Rotation angle of the entire grid
-var angle = 0;
+var angle;
 var targetAngle;
 
 var clockwiseRotation = true;
@@ -36,6 +39,7 @@ var State = {
     HexUnswap: "HexUnswap",
     RemovingMatches: "RemovingMatches",
     CloseGaps: "CloseGaps",
+    GameOver: "GameOver",
 };
 var currentState;
 
@@ -57,6 +61,11 @@ var swapDirection = null;
 // For precomputing the initial positions of the tiles to be swapped
 var lockedPos;
 var swappedPos;
+
+// Scoring
+var score;
+var combo;
+var movesLeft;
 
 window.onload = init;
 
@@ -83,6 +92,9 @@ function init()
 
     messageBox = $('#message');
     debugBox = $('#debug');
+    movesBox = $('#moves');
+    scoreBox = $('#score');
+    comboBox = $('#combo');
     resultBox = $('#result');
 
     if (!debug)
@@ -125,6 +137,44 @@ function init()
     prepareStripedHexagons();
     prepareCircles();
 
+    initializeLevel();
+
+    currentState = State.Idle;
+
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    CheckError();
+
+    lastTime = Date.now();
+    update();
+}
+
+function renderInstructions()
+{
+    debugBox.html('Level <span id="level"></span><br>' +
+                  'Score: <span id="score">0</span>%<br>' +
+                  '================================<br><br>' +
+                  'How to play:<br><br>' +
+                  'Match three or more hexagons of the same color. ' +
+                  'You know how... you\'ve seen this kind of thing before. ' +
+                  'Oh, it might be that the level rotates. Maybe.');
+}
+
+function renderMenu()
+{
+    // What menu?
+}
+
+function renderState()
+{
+    movesBox.html(movesLeft);
+    scoreBox.html(score);
+    comboBox.html(combo);
+}
+
+function initializeLevel()
+{
+    angle = 0;
     grid = new Grid(gridSize, nColors);
 
     // TODO: Generate a sensible grid (one that doesn't contain matches, but
@@ -163,30 +213,11 @@ function init()
     }
     console.log('Needed to remove matches ' + nRefills + ' time' + (nRefills === 1 ? '' : 's'));
 
-    currentState = State.Idle;
+    score = 0;
+    combo = 1;
+    movesLeft = nMoves;
 
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-    CheckError();
-
-    lastTime = Date.now();
-    update();
-}
-
-function renderInstructions()
-{
-    debugBox.html('Level <span id="level"></span><br>' +
-                  'Score: <span id="score">0</span>%<br>' +
-                  '================================<br><br>' +
-                  'How to play:<br><br>' +
-                  'Match three or more hexagons of the same color. ' +
-                  'You know how... you\'ve seen this kind of thing before. ' +
-                  'Oh, it might be that the level rotates. Maybe.');
-}
-
-function renderMenu()
-{
-    // What menu?
+    renderState();
 }
 
 function InitShaders(gl, vertexShaderId, fragmentShaderId)
@@ -285,7 +316,18 @@ function update()
             if (direction * angle >= direction * targetAngle)
             {
                 angle = targetAngle % (2*pi);
-                currentState = State.Idle;
+                combo = 1;
+                if (movesLeft)
+                {
+                    renderState();
+                    currentState = State.Idle;
+                }
+                else
+                {
+                    resultBox.html('FINAL SCORE<br>'+score);
+                    startTime = currentTime;
+                    currentState = State.GameOver;
+                }
             }
 
             break;
@@ -332,6 +374,8 @@ function update()
                     removeMatches(matches);
                     lockedHex = null;
                     swappedHex = null;
+                    --movesLeft;
+                    renderState();
                 }
                 else
                 {
@@ -385,6 +429,9 @@ function update()
             if (t > 1)
             {
                 matchedHexes = null;
+
+                ++combo;
+                renderState();
 
                 var shiftedHexColumns = grid.closeGaps();
 
@@ -473,6 +520,14 @@ function update()
                     removeMatches(matches);
                 else
                     rotateGrid(clockwiseRotation);
+            }
+            break;
+        case State.GameOver:
+            if (currentTime - startTime > gameOverDuration * 1000)
+            {
+                resultBox.html('');
+                initializeLevel();
+                currentState = State.Idle;
             }
             break;
         }
@@ -849,11 +904,28 @@ function removeMatches(matches)
         if (hex.matchCount > 1)
         {
             grid.changeType(hex, HexBomb);
+            newHexes.push(grid.get(hex.a, hex.c));
             matchedHexes.splice(i,1);
+
         }
         else
             grid.remove(hex);
     }
+
+    // Update score
+    score += baseScore * matchedHexes.length * combo;
+    for (i = 0; i < newHexes.length; ++i)
+    {
+        hex = newHexes[i];
+        if (hex instanceof HexBomb)
+            score += baseScore * newHexBombScore * combo;
+        else if (hex instanceof RowBomb)
+            score += baseScore * newRowBombScore * combo;
+        else if (hex instanceof ColorBomb)
+            score += baseScore * newColorBombScore * combo;
+    }
+    renderState();
+
     startTime = Date.now();
     currentState = State.RemovingMatches;
 }
