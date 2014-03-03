@@ -639,6 +639,12 @@ function handleMouseDown(event) {
 
             currentState = State.HexSwap;
         }
+        else if (hex !== lockedHex)
+        {
+            lockedHex.geometry.resize();
+            lockedHex = hex;
+            startTime = Date.now(); // for smooth start of oscillation
+        }
         break;
     }
 }
