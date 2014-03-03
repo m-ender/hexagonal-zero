@@ -34,3 +34,14 @@ function RowBomb(a, b, c, color, axis) {
     var center = axialToPixel(a,c);
     this.geometry = new StripedHexagon(center.x, center.y, axis, colorGenerator.getColor(color));
 }
+
+function ColorBomb(a, b, c) {
+    this.a = a;
+    this.b = b;
+    this.c = c;
+
+    this.color = NaN; // shouldn't participate in any match
+
+    var center = axialToPixel(a,c);
+    this.geometry = new Hexagon(center.x, center.y, $.Color('#ddd'));
+}

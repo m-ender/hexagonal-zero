@@ -92,6 +92,7 @@ function Grid(size, nColors) {
 
     this.grid = [];
     this.hexBombs = [];
+    this.colorBombs = [];
 
     for (var q = -size + 1; q <= size - 1; ++q)
     {
@@ -105,7 +106,14 @@ function Grid(size, nColors) {
 
             var color = floor(Math.random() * nColors);
 
-            column.push(new RegularTile(q, b, r, color));
+            if (Math.random() < 0.05)
+            {
+                var bomb = new ColorBomb(q, b, r);
+                column.push(bomb);
+                this.colorBombs.push(bomb);
+            }
+            else
+                column.push(new RegularTile(q, b, r, color));
         }
 
         this.grid.push(column);
@@ -162,19 +170,31 @@ Grid.prototype.remove = function(hex) {
 
     delete this.grid[index.i][index.j];
 
+    var i;
     if (hex instanceof HexBomb)
     {
-        var i = this.hexBombs.indexOf(hex);
+        i = this.hexBombs.indexOf(hex);
         this.hexBombs.splice(i,1);
+    }
+    else if (hex instanceof ColorBomb)
+    {
+        i = this.colorBombs.indexOf(hex);
+        this.colorBombs.splice(i,1);
     }
 };
 
 // type should be the constructor function
 Grid.prototype.changeType = function(hex, type) {
+    var i;
     if (hex instanceof HexBomb)
     {
-        var i = this.hexBombs.indexOf(hex);
+        i = this.hexBombs.indexOf(hex);
         this.hexBombs.splice(i,1);
+    }
+    else if (hex instanceof ColorBomb)
+    {
+        i = this.colorBombs.indexOf(hex);
+        this.colorBombs.splice(i,1);
     }
 
     var q = hex.a;
@@ -186,13 +206,21 @@ Grid.prototype.changeType = function(hex, type) {
     this.grid[index.i][index.j] = tile;
     if (type === HexBomb)
         this.hexBombs.push(tile);
+    else if (type === ColorBomb)
+        this.colorBombs.push(tile);
 };
 
 Grid.prototype.changeColor = function(hex, color) {
+    var i;
     if (hex instanceof HexBomb)
     {
-        var i = this.hexBombs.indexOf(hex);
+        i = this.hexBombs.indexOf(hex);
         this.hexBombs.splice(i,1);
+    }
+    else if (hex instanceof ColorBomb)
+    {
+        i = this.colorBombs.indexOf(hex);
+        this.colorBombs.splice(i,1);
     }
 
     var q = hex.a;
@@ -205,6 +233,8 @@ Grid.prototype.changeColor = function(hex, color) {
     this.grid[index.i][index.j] = tile;
     if (type === HexBomb)
         this.hexBombs.push(tile);
+    else if (type === ColorBomb)
+        this.colorBombs.push(tile);
 };
 
 Grid.prototype.hasMatches = function() {
@@ -361,6 +391,38 @@ Grid.prototype.getMatchedHexes = function() {
     }
 
     return matches;
+};
+
+// Returns an array containing one array (one match) with all tiles
+// of a given color.
+Grid.prototype.getColorMatch = function(color) {
+    var tiles = [];
+    for (var i = 0; i < this.grid.length; ++i)
+    {
+        for (var j = 0; j < this.grid[i].length; ++j)
+        {
+            var hex = this.grid[i][j];
+            if (hex.color === color)
+                tiles.push(hex);
+        }
+    }
+
+    return [tiles];
+};
+
+// Returns an array containing one array (one match) with all tiles.
+Grid.prototype.getAllTileMatch = function() {
+    var tiles = [];
+    for (var i = 0; i < this.grid.length; ++i)
+    {
+        for (var j = 0; j < this.grid[i].length; ++j)
+        {
+            var hex = this.grid[i][j];
+            tiles.push(hex);
+        }
+    }
+
+    return [tiles];
 };
 
 // This fills all existing gaps by moving the above cells down. It does not

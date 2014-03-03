@@ -268,6 +268,10 @@ function update()
         {
             grid.hexBombs[i].geometry.rotate(dTime * omega);
         }
+        for (i = 0; i < grid.colorBombs.length; ++i)
+        {
+            grid.colorBombs[i].geometry.rotate(dTime * omega);
+        }
 
         var direction;
         switch (currentState)
@@ -300,7 +304,29 @@ function update()
             if (currentT === hexD)
             {
                 grid.swap(lockedHex, swappedHex);
-                matches = grid.getMatchedHexes();
+
+                if (lockedHex instanceof ColorBomb &&
+                    !(swappedHex instanceof ColorBomb))
+                {
+                    matches = grid.getColorMatch(swappedHex.color);
+                    matches[0].push(lockedHex);
+                }
+                else if (swappedHex instanceof ColorBomb &&
+                         !(lockedHex instanceof ColorBomb))
+                {
+                    matches = grid.getColorMatch(lockedHex.color);
+                    matches[0].push(swappedHex);
+                }
+                else if (swappedHex instanceof ColorBomb &&
+                         lockedHex instanceof ColorBomb)
+                {
+                    matches = grid.getAllTileMatch();
+                }
+                else
+                {
+                    matches = grid.getMatchedHexes();
+                }
+
                 if (matches.length)
                 {
                     removeMatches(matches);
@@ -339,7 +365,8 @@ function update()
                 hex = matchedHexes[i];
 
                 if (hex instanceof RegularTile ||
-                    hex instanceof RowBomb)
+                    hex instanceof RowBomb ||
+                    hex instanceof ColorBomb)
                     hex.geometry.resize(1 - (currentTime - startTime) / 1000 * dissolveV);
                 else if (hex instanceof HexBomb)
                 {
@@ -668,7 +695,7 @@ function removeMatches(matches)
     for (i = 0; i < matches.length; ++i)
     {
         var match = matches[i];
-        if (match.length > 3)
+        if (match.length > 3 && match.axis !== undefined)
         {
             var index;
             if ((index = match.indexOf(swappedHex)) > -1)
