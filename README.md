@@ -1,4 +1,6 @@
 Hexagonal[0]
 ============
 
-another game prototype... maybe?
+A prototype for a match-3 game using a hexagonal grid. The prototype is mostly feature complete. I still have to decide whether I make it into an actual game.
+
+[Wanna try?](http://mbuettner.github.io/hexagonal-zero/public/)
