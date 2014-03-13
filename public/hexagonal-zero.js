@@ -380,6 +380,7 @@ function update()
                 }
                 else
                 {
+                    soundSystem.failHex(swappedHex);
                     grid.swap(lockedHex, swappedHex);
                     currentState = State.HexUnswap;
                 }
@@ -597,6 +598,13 @@ function drawScreen()
     gl.disable(gl.BLEND);
 }
 
+function highlightHex(hex) {
+    if (hex != null && hex != highlightedHex) {
+        soundSystem.blipHex(hex);
+    }
+    highlightedHex = hex;
+}
+
 function handleMouseMove(event) {
     var rect = canvas.getBoundingClientRect();
     var coords = normaliseCursorCoordinates(event, rect);
@@ -612,7 +620,7 @@ function handleMouseMove(event) {
     switch(currentState)
     {
     case State.Idle:
-        highlightedHex = hex;
+        highlightHex(hex);
 
         if (debug)
         {
@@ -624,7 +632,8 @@ function handleMouseMove(event) {
     case State.HexSelected:
         if (hex && manhattanDistance(hex, lockedHex) === 1)
         {
-            highlightedHex = hex;
+            highlightHex(hex);
+
             if (debug)
             {
                 debugBox.find('#hexa').html(axial.q);
@@ -665,6 +674,7 @@ function handleMouseDown(event) {
         lockedHex = hex;
         startTime = Date.now(); // for smooth start of oscillation
         currentState = State.HexSelected;
+        soundSystem.selectHex(hex);
         break;
     case State.HexSelected:
         if (manhattanDistance(hex, lockedHex) === 1)
@@ -673,6 +683,7 @@ function handleMouseDown(event) {
 
             highlightedHex = null;
             swappedHex = hex;
+            soundSystem.swapHex(swappedHex);
 
             lockedPos = {
                 x: lockedHex.a * iq.x + lockedHex.c * ir.x,
@@ -699,6 +710,7 @@ function handleMouseDown(event) {
         {
             lockedHex.geometry.resize();
             lockedHex = hex;
+            soundSystem.selectHex(lockedHex);
             startTime = Date.now(); // for smooth start of oscillation
         }
         break;
@@ -816,6 +828,7 @@ function removeMatches(matches)
         for (j = 0; j < match.length; ++j)
         {
             hex = match[j];
+            soundSystem.removeHex(hex);
 
             if (changedHexes.indexOf(hex) === -1)
             {
@@ -838,6 +851,9 @@ function removeMatches(matches)
 
     // Process bombs. We're adding new elements to the array while walking
     // over it, which is a bit evil but works.
+    if (bombedHexes.length > 0) {
+        soundSystem.bombHex(null);
+    }
     for (i = 0; i < bombedHexes.length; ++i)
     {
         hex = bombedHexes[i];
