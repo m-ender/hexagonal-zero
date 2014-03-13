@@ -25,7 +25,7 @@ SoundSystem.prototype.loadSounds = function(soundsToBeLoaded) {
 
 SoundSystem.prototype.loadSound = function(sound, loadCallback) {
     var name = sound["name"];
-    var url = sound["wavUrl"];
+    var url = sound["url"];
 
     var system = this;
     var request = new XMLHttpRequest();
@@ -90,7 +90,11 @@ SoundSystem.prototype.playEffect = function(name, filterFrequency) {
     filter.connect(this.context.destination);
     
     soundSource.start(0);
-}
+};
+
+SoundSystem.prototype.rotateGrid = function(isClockwise) {
+    this.playEffect("rotate");
+};
 
 SoundSystem.prototype.blipHex = function(hex) {
     this.playEffect("blip");
@@ -117,11 +121,12 @@ SoundSystem.prototype.bombHex = function(hex) {
 };
 
 var soundSystem = new SoundSystem([
-    {"name":"music","wavUrl":"sounds/music.mp3"},
-    {"name":"blip","wavUrl":"sounds/blip.wav"},
-    {"name":"select","wavUrl":"sounds/select.wav"},
-    {"name":"swap","wavUrl":"sounds/swap.wav"},
-    {"name":"remove","wavUrl":"sounds/remove.wav"},
-    {"name":"fail","wavUrl":"sounds/fail.wav"},
-    {"name":"bomb","wavUrl":"sounds/bomb.wav"}
+    {"name":"music","url":"sounds/music.mp3"},
+    {"name":"blip","url":"sounds/blip.wav"},
+    {"name":"select","url":"sounds/select.wav"},
+    {"name":"swap","url":"sounds/swap.wav"},
+    {"name":"remove","url":"sounds/remove.wav"},
+    {"name":"fail","url":"sounds/fail.wav"},
+    {"name":"bomb","url":"sounds/bomb.wav"},
+    {"name":"rotate","url":"sounds/rotate.wav"}
 ]);

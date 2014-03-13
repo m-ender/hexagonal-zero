@@ -764,6 +764,7 @@ function normaliseCursorCoordinates(event, rect)
 // (counter-clockwise is default)
 function rotateGrid(cw)
 {
+    soundSystem.rotateGrid(cw);
     targetAngle = cw ? (angle - pi/3) : (angle + pi/3);
     this.grid.rotate(cw);
     currentState = State.Rotating;
